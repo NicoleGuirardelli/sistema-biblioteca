@@ -8,11 +8,10 @@ public class Livro {
 
 
 
-    public Livro(int id, String titulo, String autor, boolean disponivel) {
+    public Livro(int id, String titulo, String autor) {
         this.id = id;
         this.titulo = titulo;
         this.autor = autor;
-        this.disponivel = disponivel;
 
     }
 
