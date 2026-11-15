@@ -20,4 +20,22 @@ public class BibliotecaService {
     public synchronized List<Livro> listarLivros(){
         return new ArrayList<>(livros);
     }
+
+    public synchronized String emprestarLivro(int id){
+
+        for (Livro livro : livros){
+            if(livro.getId() == id){
+
+                if(!livro.isDisponivel()){
+                    return "O livro já esta emprestado";
+                }
+
+                livro.setDisponivel(false);// marca como emprestado
+
+                return "Seu empréstimo foi realizado com sucesso";
+            }
+        }
+
+        return "O livro não foi encontrado";
+    }
 }

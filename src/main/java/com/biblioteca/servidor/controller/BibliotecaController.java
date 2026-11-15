@@ -2,11 +2,7 @@ package com.biblioteca.servidor.controller;
 
 import com.biblioteca.servidor.model.Livro;
 import com.biblioteca.servidor.service.BibliotecaService;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
-
+import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController // informa ao Spring que essa classe recebe req. HTTP e retorna
@@ -33,5 +29,10 @@ public class BibliotecaController {
     @PostMapping("/livros")
     public Livro cadastrarLivro(@RequestBody Livro livro){
         return bibliotecaService.cadastrarLivro(livro.getTitulo(),  livro.getAutor());
+    }
+
+    @PutMapping("livros/{id}/emprestar")
+    public String emprestarLivro(@PathVariable int id){
+        return bibliotecaService.emprestarLivro(id);
     }
 }
