@@ -3,6 +3,8 @@ package com.biblioteca.servidor.controller;
 import com.biblioteca.servidor.model.Livro;
 import com.biblioteca.servidor.service.BibliotecaService;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -25,5 +27,11 @@ public class BibliotecaController {
     @GetMapping("/livros")
     public List<Livro> listarLivros(){
         return bibliotecaService.listarLivros();
+    }
+
+    //rota para cadrastro de livro
+    @PostMapping("/livros")
+    public Livro cadastrarLivro(@RequestBody Livro livro){
+        return bibliotecaService.cadastrarLivro(livro.getTitulo(),  livro.getAutor());
     }
 }

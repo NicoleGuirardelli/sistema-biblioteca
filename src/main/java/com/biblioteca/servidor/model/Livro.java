@@ -1,17 +1,18 @@
 package com.biblioteca.servidor.model;
 
 public class Livro {
-    private int id;
+    private Integer id;
     private String titulo;
     private String autor;
     private boolean disponivel;
 
+    public Livro(){}
 
-
-    public Livro(int id, String titulo, String autor) {
+    public Livro(Integer id, String titulo, String autor) {
         this.id = id;
         this.titulo = titulo;
         this.autor = autor;
+        this.disponivel = true;
 
     }
 
@@ -30,6 +31,18 @@ public class Livro {
 
     public boolean isDisponivel() {
         return disponivel;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public void setTitulo(String titulo) {
+        this.titulo = titulo;
+    }
+
+    public void setAutor(String autor) {
+        this.autor = autor;
     }
 
     public void setDisponivel(boolean disponivel) {
