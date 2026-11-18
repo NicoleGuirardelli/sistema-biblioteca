@@ -11,12 +11,13 @@ public class ClienteBibliotecario  {
 
         int opcao=0;
 
-        while(opcao!=4){
+        while(opcao!=5){
             System.out.println("biblioteca");
             System.out.println("1 cadastrar livro");
             System.out.println("2 consultar livros");
             System.out.println( "3 atualizar livro");
-            System.out.println("4 sair");
+            System.out.println("4 deletar livro");
+            System.out.println("5 sair");
             System.out.println("escolha uma opcao");
 
             if(!scanner.hasNextInt()){
@@ -38,6 +39,9 @@ public class ClienteBibliotecario  {
                 case 3:
                     atualizarLivros();
                 case 4:
+                    deletarLivros();
+                    break;
+                case 5:
                     System.out.println("Saindo..");
                     break;
                 default:
@@ -96,6 +100,27 @@ public class ClienteBibliotecario  {
 
             System.out.println("Erro no cadastro de livro : " + e.getMessage());
         }
+    }
+
+    public static void  deletarLivros() {
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("Digite o Id do livro: ");
+        int id = scanner.nextInt();
+
+        try {
+
+            HttpClient cliente = HttpClient.newHttpClient();
+
+            HttpRequest requisicao = HttpRequest.newBuilder()
+                    .uri(URI.create("http://localhost:8080/livros/" + id))
+                    .DELETE().build();
+
+            HttpResponse<String> resposta = cliente.send(requisicao, HttpResponse.BodyHandlers.ofString());
+            System.out.println(resposta.body());
+        } catch (Exception e) {
+            System.out.println("Erro ao deletar livro " + e.getMessage());
+        }
+
     }
 
     public static void atualizarLivros() {
