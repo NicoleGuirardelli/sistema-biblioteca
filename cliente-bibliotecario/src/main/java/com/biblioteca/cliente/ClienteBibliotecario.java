@@ -11,11 +11,12 @@ public class ClienteBibliotecario  {
 
         int opcao=0;
 
-        while(opcao!=3){
+        while(opcao!=4){
             System.out.println("biblioteca");
             System.out.println("1 cadastrar livro");
             System.out.println("2 consultar livros");
-            System.out.println("3 sair");
+            System.out.println( "3 atualizar livro");
+            System.out.println("4 sair");
             System.out.println("escolha uma opcao");
 
             if(!scanner.hasNextInt()){
@@ -35,6 +36,8 @@ public class ClienteBibliotecario  {
                     consultarLivros();
                     break;
                 case 3:
+                    atualizarLivros();
+                case 4:
                     System.out.println("Saindo..");
                     break;
                 default:
@@ -94,4 +97,36 @@ public class ClienteBibliotecario  {
             System.out.println("Erro no cadastro de livro : " + e.getMessage());
         }
     }
+
+    public static void atualizarLivros() {
+        Scanner scanner = new Scanner(System.in);
+
+        System.out.println("digite o id de livro");
+        int id  = scanner.nextInt();
+        System.out.println("Digite o nome do livro: ");
+        String titulo = scanner.nextLine();
+        System.out.println("Digite o autor do livro: ");
+        String autor = scanner.nextLine();
+
+        String json = String.format("{\"titulo\":\"%s\",\"autor\":\"%s\"}", titulo,autor);
+
+        try {
+
+            HttpClient cliente = HttpClient.newHttpClient();
+
+            HttpRequest requisicao = HttpRequest.newBuilder()
+                    .uri(URI.create("http://localhost:8080/livros/" + id))
+                    .header("Content-Type", "application/json")
+                    .PUT(HttpRequest.BodyPublishers.ofString(json)).build();
+
+            HttpResponse<String> resposta = cliente.send(requisicao, HttpResponse.BodyHandlers.ofString());
+            System.out.println(resposta.body());
+        } catch (Exception e) {
+            System.out.println("Erro ao atualizar livro " + e.getMessage());
+        }
+
+
+
+    }
+
 }
