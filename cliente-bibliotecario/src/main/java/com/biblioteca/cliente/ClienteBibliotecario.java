@@ -123,8 +123,6 @@ public class ClienteBibliotecario  {
 
     public static void atualizarLivros() {
 
-        String json = String.format("{\"titulo\":\"%s\",\"autor\":\"%s\"}", titulo,autor);
-
         try {
             // trazendo leitura no try para evitar quebra de sistema
             System.out.println("digite o id de livro");
@@ -134,6 +132,8 @@ public class ClienteBibliotecario  {
             String titulo = scanner.nextLine();
             System.out.println("Digite o autor do livro: ");
             String autor = scanner.nextLine();
+
+            String json = String.format("{\"titulo\":\"%s\",\"autor\":\"%s\"}", titulo,autor);
 
             HttpClient cliente = HttpClient.newHttpClient();
 
