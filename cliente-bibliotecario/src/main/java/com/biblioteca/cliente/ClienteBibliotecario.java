@@ -6,8 +6,8 @@ import java.util.Scanner;
 
 public class ClienteBibliotecario  {
 
+    public static final Scanner scanner = new Scanner(System.in);
     public static void main(String[] args) {
-        Scanner scanner = new Scanner(System.in);
 
         int opcao=0;
 
@@ -15,7 +15,7 @@ public class ClienteBibliotecario  {
             System.out.println("biblioteca");
             System.out.println("1 cadastrar livro");
             System.out.println("2 consultar livros");
-            System.out.println( "3 atualizar livro");
+            System.out.println("3 atualizar livro");
             System.out.println("4 deletar livro");
             System.out.println("5 sair");
             System.out.println("escolha uma opcao");
@@ -38,6 +38,7 @@ public class ClienteBibliotecario  {
                     break;
                 case 3:
                     atualizarLivros();
+                    break;
                 case 4:
                     deletarLivros();
                     break;
@@ -71,8 +72,6 @@ public class ClienteBibliotecario  {
 
     public static void cadastrarLivro() {
 
-        Scanner scanner = new Scanner(System.in);
-
         System.out.println("Digite o nome do livro: ");
         String titulo = scanner.nextLine();
 
@@ -97,17 +96,16 @@ public class ClienteBibliotecario  {
                 System.out.println("Erro na consulta: " + resposta.statusCode());
             }
         } catch (Exception e) {
-
             System.out.println("Erro no cadastro de livro : " + e.getMessage());
         }
     }
 
     public static void  deletarLivros() {
-        Scanner scanner = new Scanner(System.in);
-        System.out.println("Digite o Id do livro: ");
-        int id = scanner.nextInt();
 
         try {
+            // dentro do try caso seja um input incorreto nao quebra sistema
+            System.out.println("Digite o Id do livro: ");
+            int id = scanner.nextInt();
 
             HttpClient cliente = HttpClient.newHttpClient();
 
@@ -124,18 +122,18 @@ public class ClienteBibliotecario  {
     }
 
     public static void atualizarLivros() {
-        Scanner scanner = new Scanner(System.in);
-
-        System.out.println("digite o id de livro");
-        int id  = scanner.nextInt();
-        System.out.println("Digite o nome do livro: ");
-        String titulo = scanner.nextLine();
-        System.out.println("Digite o autor do livro: ");
-        String autor = scanner.nextLine();
-
-        String json = String.format("{\"titulo\":\"%s\",\"autor\":\"%s\"}", titulo,autor);
 
         try {
+            // trazendo leitura no try para evitar quebra de sistema
+            System.out.println("digite o id de livro");
+            int id  = scanner.nextInt();
+            scanner.nextLine(); // para limpar o buffer e o titulo do livro nao ficar vazio
+            System.out.println("Digite o nome do livro: ");
+            String titulo = scanner.nextLine();
+            System.out.println("Digite o autor do livro: ");
+            String autor = scanner.nextLine();
+
+            String json = String.format("{\"titulo\":\"%s\",\"autor\":\"%s\"}", titulo,autor);
 
             HttpClient cliente = HttpClient.newHttpClient();
 
@@ -149,9 +147,5 @@ public class ClienteBibliotecario  {
         } catch (Exception e) {
             System.out.println("Erro ao atualizar livro " + e.getMessage());
         }
-
-
-
     }
-
 }
