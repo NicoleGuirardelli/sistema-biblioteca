@@ -200,20 +200,26 @@ public class ClienteBibliotecario  {
         String titulo = scanner.nextLine();
         System.out.println("Digite o autor do livro: ");
         String autor = scanner.nextLine().trim();
-        System.out.println("Digite o ISBN, ou enter para deixar vazio: ");
+        System.out.println("Digite o ISBN: ");
         String isbn = scanner.nextLine().trim();
-        System.out.println("Digite a categoria, ou enter para deixar vazia: ");
+        System.out.println("Digite a categoria: ");
         String categoria = scanner.nextLine().trim();
         System.out.println("Digite a quantidade de exemplares: ");
         String quantidadeTexto = scanner.nextLine().trim();
-        int quantidade = 1;
-        if (!quantidadeTexto.isEmpty()) {
-            try {
-                quantidade = Integer.parseInt(quantidadeTexto);
-            } catch (NumberFormatException e) {
-                System.out.println("quantidade invalida");
-                return;
-            }
+        if (titulo.isBlank() || autor.isBlank() || isbn.isBlank() || categoria.isBlank() || quantidadeTexto.isBlank()) {
+            System.out.println("Informe titulo, autor, ISBN, categoria e quantidade");
+            return;
+        }
+        int quantidade;
+        try {
+            quantidade = Integer.parseInt(quantidadeTexto);
+        } catch (NumberFormatException e) {
+            System.out.println("quantidade invalida");
+            return;
+        }
+        if (quantidade <= 0) {
+            System.out.println("Informe a quantidade de exemplares");
+            return;
         }
         enviarCadastro(titulo, autor, isbn, categoria, quantidade, false);
     }
