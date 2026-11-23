@@ -127,8 +127,12 @@ public class ClienteAluno {
 
             HttpResponse<String> resposta = cliente.send(requisicao, HttpResponse.BodyHandlers.ofString());
 
-            System.out.println("Livros disponiveis");
-            System.out.println(resposta.body());
+            if (resposta.body() != null && resposta.body().trim().equals("[]")) {
+                System.out.println("Nenhum resultado");
+            } else {
+                System.out.println("Livros disponiveis");
+                System.out.println(resposta.body());
+            }
 
         } catch (Exception e) {
             System.out.println("Erro na consulta: " + e.getMessage());

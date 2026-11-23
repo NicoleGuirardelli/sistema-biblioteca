@@ -6,10 +6,20 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.biblioteca.servidor.model.Usuario;
+import com.biblioteca.servidor.repository.UsuarioRepository;
+import com.biblioteca.servidor.service.ApiException;
+import com.biblioteca.servidor.service.EmprestimoService;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -32,6 +42,12 @@ class PrototipoFluxosTest {
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
+
+    @Autowired
+    private EmprestimoService emprestimoService;
+
+    @Autowired
+    private UsuarioRepository usuarioRepository;
 
     @Test
     void tabelasSeguemOModeloDaDocumentacao() {
@@ -190,6 +206,55 @@ class PrototipoFluxosTest {
                         .param("status", "QUALQUER")
                         .header("Authorization", "Bearer " + tokenBibliotecario))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void duasRequisicoesSimultaneasPeloUltimoExemplar() throws Exception {
+        Usuario ana = usuarioRepository.findByMatricula("2023001").orElseThrow();
+        Usuario bruno = usuarioRepository.findByMatricula("2023002").orElseThrow();
+        Integer livroId = jdbcTemplate.queryForObject(
+                "select id from livro where isbn = '9788575225632'", Integer.class);
+
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        CountDownLatch prontos = new CountDownLatch(2);
+        CountDownLatch inicio = new CountDownLatch(1);
+        List<Integer> status = new ArrayList<>();
+
+        for (Usuario usuario : List.of(ana, bruno)) {
+            executor.submit(() -> {
+                prontos.countDown();
+                try {
+                    inicio.await();
+                    emprestimoService.realizar(usuario, livroId, null);
+                    synchronized (status) {
+                        status.add(200);
+                    }
+                } catch (ApiException excecao) {
+                    synchronized (status) {
+                        status.add(excecao.getStatus());
+                    }
+                } catch (InterruptedException excecao) {
+                    Thread.currentThread().interrupt();
+                }
+            });
+        }
+
+        prontos.await();
+        inicio.countDown();
+        executor.shutdown();
+        executor.awaitTermination(10, TimeUnit.SECONDS);
+
+        long sucessos = status.stream().filter(codigo -> codigo == 200).count();
+        long recusas = status.stream().filter(codigo -> codigo == 409).count();
+        Integer disponivel = jdbcTemplate.queryForObject(
+                "select qtd_disponivel from livro where id = ?", Integer.class, livroId);
+        Integer emprestimos = jdbcTemplate.queryForObject(
+                "select count(*) from emprestimo where livro_id = ? and status = 'ATIVO'",
+                Integer.class, livroId);
+
+        if (sucessos != 1 || recusas != 1 || disponivel != 0 || emprestimos != 1) {
+            throw new AssertionError("status=" + status + " qtd=" + disponivel + " emprestimos=" + emprestimos);
+        }
     }
 
     private String token(String matricula) throws Exception {
