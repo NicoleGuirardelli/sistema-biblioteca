@@ -116,7 +116,7 @@ public class ClienteAluno {
 
     public static void consultarLivros() {
         try {
-            System.out.println("Digite titulo ou categoria, ou enter para listar todos: ");
+            System.out.println("Digite titulo, autor ou categoria, ou enter para listar todos: ");
             String termo = scanner.nextLine().trim();
             String url = termo.isEmpty()
                     ? "http://localhost:8080/livros"

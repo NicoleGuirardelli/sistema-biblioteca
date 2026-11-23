@@ -36,12 +36,21 @@ public class BibliotecaService {
         }
         int quantidade = dados.getQtdTotal() > 0 ? dados.getQtdTotal() : 1;
         String isbn = textoOuNulo(dados.getIsbn());
-        if (isbn != null && livroRepository.existsByIsbn(isbn)) {
-            throw new ApiException(409, "ISBN já cadastrado");
+        if (isbn != null) {
+            Livro existente = livroRepository.findByIsbn(isbn).orElse(null);
+            if (existente != null) {
+                if (!dados.isIncrementar()) {
+                    throw new ApiException(409, "ISBN já cadastrado. Confirme para incrementar os exemplares.");
+                }
+                existente.setQtdTotal(existente.getQtdTotal() + quantidade);
+                existente.setQtdDisponivel(existente.getQtdDisponivel() + quantidade);
+                return existente;
+            }
         }
 
         Livro livro = new Livro();
         livro.setTitulo(dados.getTitulo().trim());
+        livro.setAutor(textoOuNulo(dados.getAutor()));
         livro.setIsbn(isbn);
         livro.setCategoria(textoOuNulo(dados.getCategoria()));
         livro.setQtdTotal(quantidade);
@@ -57,6 +66,9 @@ public class BibliotecaService {
         }
         if (dados.getTitulo() != null && !dados.getTitulo().isBlank()) {
             livro.setTitulo(dados.getTitulo().trim());
+        }
+        if (dados.getAutor() != null) {
+            livro.setAutor(textoOuNulo(dados.getAutor()));
         }
         if (dados.getCategoria() != null) {
             livro.setCategoria(textoOuNulo(dados.getCategoria()));

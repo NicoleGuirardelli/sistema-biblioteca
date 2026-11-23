@@ -3,6 +3,7 @@ package com.biblioteca.servidor;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -52,7 +53,7 @@ class PrototipoFluxosTest {
     @Test
     void tabelasSeguemOModeloDaDocumentacao() {
         assertColunas("USUARIO", Set.of("ID", "NOME", "MATRICULA", "PERFIL", "ATIVO"));
-        assertColunas("LIVRO", Set.of("ID", "TITULO", "ISBN", "CATEGORIA", "QTD_TOTAL", "QTD_DISPONIVEL"));
+        assertColunas("LIVRO", Set.of("ID", "TITULO", "AUTOR", "ISBN", "CATEGORIA", "QTD_TOTAL", "QTD_DISPONIVEL"));
         assertColunas("EMPRESTIMO", Set.of(
                 "ID", "USUARIO_ID", "LIVRO_ID", "DATA_EMPRESTIMO", "DATA_PREVISTA",
                 "DATA_DEVOLUCAO", "STATUS", "EM_ATRASO"));
@@ -74,9 +75,11 @@ class PrototipoFluxosTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(0));
 
-        mockMvc.perform(get("/livros").param("q", "Literatura").header("Authorization", "Bearer " + tokenAna))
+        mockMvc.perform(get("/livros").param("q", "Machado").header("Authorization", "Bearer " + tokenAna))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].categoria").value("Literatura"));
+                .andExpect(jsonPath("$[0].titulo").value("Dom Casmurro"))
+                .andExpect(jsonPath("$[0].autor").value("Machado de Assis"))
+                .andExpect(jsonPath("$[0].qtdDisponivel").value(4));
 
         int livroUnico = idDoLivro("9788575225632", tokenAna);
         MvcResult emprestimo = mockMvc.perform(post("/emprestimos")
@@ -206,6 +209,81 @@ class PrototipoFluxosTest {
                         .param("status", "QUALQUER")
                         .header("Authorization", "Bearer " + tokenBibliotecario))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void alunoConsultaMasNaoAlteraOAcervo() throws Exception {
+        String tokenAna = token("2023001");
+        String tokenBibliotecario = token("B001");
+        int livro = idDoLivro("9780132350884", tokenAna);
+
+        mockMvc.perform(get("/livros").header("Authorization", "Bearer " + tokenAna))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(post("/livros")
+                        .header("Authorization", "Bearer " + tokenAna)
+                        .contentType("application/json")
+                        .content("{\"titulo\":\"Livro do aluno\"}"))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(put("/livros/" + livro)
+                        .header("Authorization", "Bearer " + tokenAna)
+                        .contentType("application/json")
+                        .content("{\"titulo\":\"Titulo alterado\"}"))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(delete("/livros/" + livro).header("Authorization", "Bearer " + tokenAna))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(post("/livros")
+                        .header("Authorization", "Bearer " + tokenBibliotecario)
+                        .contentType("application/json")
+                        .content("{\"titulo\":\"Livro novo\",\"isbn\":\"9780000000001\",\"qtdTotal\":2}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.titulo").value("Livro novo"));
+    }
+
+    @Test
+    void isbnExistenteIncrementaExemplares() throws Exception {
+        String tokenBibliotecario = token("B001");
+
+        mockMvc.perform(post("/livros")
+                        .header("Authorization", "Bearer " + tokenBibliotecario)
+                        .contentType("application/json")
+                        .content("{\"titulo\":\"Clean Code\",\"isbn\":\"9780132350884\",\"qtdTotal\":2}"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.mensagem").value("ISBN já cadastrado. Confirme para incrementar os exemplares."));
+
+        mockMvc.perform(post("/livros")
+                        .header("Authorization", "Bearer " + tokenBibliotecario)
+                        .contentType("application/json")
+                        .content("{\"titulo\":\"Clean Code\",\"isbn\":\"9780132350884\",\"qtdTotal\":2,\"incrementar\":true}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.qtdTotal").value(5))
+                .andExpect(jsonPath("$.qtdDisponivel").value(5));
+    }
+
+    @Test
+    void bibliotecarioDevolveEmprestimoDoAluno() throws Exception {
+        String tokenAna = token("2023001");
+        String tokenBibliotecario = token("B001");
+        int livro = idDoLivro("9780201633610", tokenAna);
+
+        MvcResult emprestimo = mockMvc.perform(post("/emprestimos")
+                        .header("Authorization", "Bearer " + tokenAna)
+                        .contentType("application/json")
+                        .content("{\"livroId\":" + livro + "}"))
+                .andExpect(status().isOk())
+                .andReturn();
+        int emprestimoId = jsonMapper.readTree(emprestimo.getResponse().getContentAsString()).get("id").asInt();
+
+        mockMvc.perform(post("/emprestimos/" + emprestimoId + "/devolucao")
+                        .header("Authorization", "Bearer " + tokenBibliotecario))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("ENCERRADO"));
+
+        mockMvc.perform(get("/livros/" + livro).header("Authorization", "Bearer " + tokenBibliotecario))
+                .andExpect(jsonPath("$.qtdDisponivel").value(2));
     }
 
     @Test

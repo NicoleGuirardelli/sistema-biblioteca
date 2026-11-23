@@ -26,6 +26,8 @@ public class ClienteBibliotecario  {
             System.out.println("4 deletar livro");
             System.out.println("5 sair");
             System.out.println("6 listar emprestimos");
+            System.out.println("7 emprestar para aluno");
+            System.out.println("8 devolver emprestimo");
             System.out.println("escolha uma opcao");
 
             if(!scanner.hasNextInt()){
@@ -55,6 +57,12 @@ public class ClienteBibliotecario  {
                     break;
                 case 6:
                     listarEmprestimos();
+                    break;
+                case 7:
+                    emprestarParaAluno();
+                    break;
+                case 8:
+                    devolverEmprestimo();
                     break;
                 default:
                     System.out.println("opcao invalida");
@@ -129,46 +137,114 @@ public class ClienteBibliotecario  {
 
     public static void consultarLivros() {
         try {
+            System.out.println("Digite titulo, autor ou categoria, ou enter para listar todos: ");
+            String termo = scanner.nextLine().trim();
+            String url = termo.isEmpty()
+                    ? "http://localhost:8080/livros"
+                    : "http://localhost:8080/livros?q=" + URLEncoder.encode(termo, StandardCharsets.UTF_8);
+
             HttpClient cliente = HttpClient.newHttpClient();
-
-            HttpRequest requisicao = comToken("http://localhost:8080/livros").GET().build();
-
+            HttpRequest requisicao = comToken(url).GET().build();
             HttpResponse<String> resposta = cliente.send(requisicao, HttpResponse.BodyHandlers.ofString());
 
-            System.out.println("Livros cadastrados");
-            System.out.println(resposta.body());
-
+            if (resposta.body() != null && resposta.body().trim().equals("[]")) {
+                System.out.println("Nenhum resultado");
+            } else {
+                System.out.println("Livros cadastrados");
+                System.out.println(resposta.body());
+            }
         } catch (Exception e) {
             System.out.println("Erro na consulta: " + e.getMessage());
         }
     }
 
+    public static void emprestarParaAluno() {
+        try {
+            System.out.println("Digite o id do livro: ");
+            int livroId = scanner.nextInt();
+            scanner.nextLine();
+            System.out.println("Digite a matricula do aluno: ");
+            String matricula = scanner.nextLine().trim();
+            String json = String.format("{\"livroId\":%d,\"matriculaAluno\":\"%s\"}", livroId, matricula);
+
+            HttpClient cliente = HttpClient.newHttpClient();
+            HttpRequest requisicao = comToken("http://localhost:8080/emprestimos")
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(json)).build();
+            HttpResponse<String> resposta = cliente.send(requisicao, HttpResponse.BodyHandlers.ofString());
+            System.out.println(resposta.body());
+        } catch (Exception e) {
+            System.out.println("Erro ao emprestar: " + e.getMessage());
+        }
+    }
+
+    public static void devolverEmprestimo() {
+        try {
+            System.out.println("Digite o id do emprestimo: ");
+            int emprestimoId = scanner.nextInt();
+            scanner.nextLine();
+
+            HttpClient cliente = HttpClient.newHttpClient();
+            HttpRequest requisicao = comToken("http://localhost:8080/emprestimos/" + emprestimoId + "/devolucao")
+                    .POST(HttpRequest.BodyPublishers.noBody()).build();
+            HttpResponse<String> resposta = cliente.send(requisicao, HttpResponse.BodyHandlers.ofString());
+            System.out.println(resposta.body());
+        } catch (Exception e) {
+            System.out.println("Erro ao devolver: " + e.getMessage());
+        }
+    }
+
 
     public static void cadastrarLivro() {
-
         System.out.println("Digite o nome do livro: ");
         String titulo = scanner.nextLine();
-
         System.out.println("Digite o autor do livro: ");
-        String autor = scanner.nextLine();
+        String autor = scanner.nextLine().trim();
+        System.out.println("Digite o ISBN, ou enter para deixar vazio: ");
+        String isbn = scanner.nextLine().trim();
+        System.out.println("Digite a categoria, ou enter para deixar vazia: ");
+        String categoria = scanner.nextLine().trim();
+        System.out.println("Digite a quantidade de exemplares: ");
+        String quantidadeTexto = scanner.nextLine().trim();
+        int quantidade = 1;
+        if (!quantidadeTexto.isEmpty()) {
+            try {
+                quantidade = Integer.parseInt(quantidadeTexto);
+            } catch (NumberFormatException e) {
+                System.out.println("quantidade invalida");
+                return;
+            }
+        }
+        enviarCadastro(titulo, autor, isbn, categoria, quantidade, false);
+    }
 
-        String json = String.format("{\"titulo\":\"%s\",\"autor\":\"%s\"}", titulo,autor);
+    public static void enviarCadastro(String titulo, String autor, String isbn, String categoria, int quantidade, boolean incrementar) {
+        String json = String.format(
+                "{\"titulo\":\"%s\",\"autor\":\"%s\",\"isbn\":\"%s\",\"categoria\":\"%s\",\"qtdTotal\":%d,\"incrementar\":%s}",
+                titulo, autor, isbn, categoria, quantidade, incrementar);
         try {
             HttpClient cliente = HttpClient.newHttpClient();
-
             HttpRequest requisicao = comToken("http://localhost:8080/livros")
                     .header("Content-Type", "application/json")
                     .POST(HttpRequest.BodyPublishers.ofString(json)).build();
-
             HttpResponse<String> resposta = cliente.send(requisicao, HttpResponse.BodyHandlers.ofString());
 
-            if(resposta.statusCode() == 200 || resposta.statusCode() == 201) {
-                System.out.println("Livro cadastrado com sucesso");
+            if (resposta.statusCode() == 200 || resposta.statusCode() == 201) {
+                System.out.println(incrementar ? "Exemplares incrementados" : "Livro cadastrado com sucesso");
                 System.out.println(resposta.body());
-
-            }else  {
-                System.out.println("Erro na consulta: " + resposta.statusCode());
+                return;
             }
+            if (resposta.statusCode() == 409 && resposta.body().contains("incrementar") && !incrementar) {
+                System.out.println(resposta.body());
+                System.out.println("Deseja incrementar a quantidade de exemplares? (s/n)");
+                String confirma = scanner.nextLine().trim();
+                if (confirma.equalsIgnoreCase("s")) {
+                    enviarCadastro(titulo, autor, isbn, categoria, quantidade, true);
+                }
+                return;
+            }
+            System.out.println("Erro no cadastro: " + resposta.statusCode());
+            System.out.println(resposta.body());
         } catch (Exception e) {
             System.out.println("Erro no cadastro de livro : " + e.getMessage());
         }
@@ -203,10 +279,24 @@ public class ClienteBibliotecario  {
             scanner.nextLine(); // para limpar o buffer e o titulo do livro nao ficar vazio
             System.out.println("Digite o nome do livro: ");
             String titulo = scanner.nextLine();
-            System.out.println("Digite o autor do livro: ");
-            String autor = scanner.nextLine();
+            System.out.println("Digite o autor, ou enter para manter: ");
+            String autor = scanner.nextLine().trim();
+            System.out.println("Digite o ISBN, ou enter para manter: ");
+            String isbn = scanner.nextLine().trim();
+            System.out.println("Digite a categoria, ou enter para manter: ");
+            String categoria = scanner.nextLine().trim();
 
-            String json = String.format("{\"titulo\":\"%s\",\"autor\":\"%s\"}", titulo,autor);
+            String json = "{\"titulo\":\"" + titulo + "\"";
+            if (!autor.isEmpty()) {
+                json += ",\"autor\":\"" + autor + "\"";
+            }
+            if (!isbn.isEmpty()) {
+                json += ",\"isbn\":\"" + isbn + "\"";
+            }
+            if (!categoria.isEmpty()) {
+                json += ",\"categoria\":\"" + categoria + "\"";
+            }
+            json += "}";
 
             HttpClient cliente = HttpClient.newHttpClient();
 
