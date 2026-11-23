@@ -145,30 +145,53 @@ public class ClienteBibliotecario  {
 
 
     public static void cadastrarLivro() {
-
         System.out.println("Digite o nome do livro: ");
         String titulo = scanner.nextLine();
+        System.out.println("Digite o ISBN, ou enter para deixar vazio: ");
+        String isbn = scanner.nextLine().trim();
+        System.out.println("Digite a categoria, ou enter para deixar vazia: ");
+        String categoria = scanner.nextLine().trim();
+        System.out.println("Digite a quantidade de exemplares: ");
+        String quantidadeTexto = scanner.nextLine().trim();
+        int quantidade = 1;
+        if (!quantidadeTexto.isEmpty()) {
+            try {
+                quantidade = Integer.parseInt(quantidadeTexto);
+            } catch (NumberFormatException e) {
+                System.out.println("quantidade invalida");
+                return;
+            }
+        }
+        enviarCadastro(titulo, isbn, categoria, quantidade, false);
+    }
 
-        System.out.println("Digite o autor do livro: ");
-        String autor = scanner.nextLine();
-
-        String json = String.format("{\"titulo\":\"%s\",\"autor\":\"%s\"}", titulo,autor);
+    public static void enviarCadastro(String titulo, String isbn, String categoria, int quantidade, boolean incrementar) {
+        String json = String.format(
+                "{\"titulo\":\"%s\",\"isbn\":\"%s\",\"categoria\":\"%s\",\"qtdTotal\":%d,\"incrementar\":%s}",
+                titulo, isbn, categoria, quantidade, incrementar);
         try {
             HttpClient cliente = HttpClient.newHttpClient();
-
             HttpRequest requisicao = comToken("http://localhost:8080/livros")
                     .header("Content-Type", "application/json")
                     .POST(HttpRequest.BodyPublishers.ofString(json)).build();
-
             HttpResponse<String> resposta = cliente.send(requisicao, HttpResponse.BodyHandlers.ofString());
 
-            if(resposta.statusCode() == 200 || resposta.statusCode() == 201) {
-                System.out.println("Livro cadastrado com sucesso");
+            if (resposta.statusCode() == 200 || resposta.statusCode() == 201) {
+                System.out.println(incrementar ? "Exemplares incrementados" : "Livro cadastrado com sucesso");
                 System.out.println(resposta.body());
-
-            }else  {
-                System.out.println("Erro na consulta: " + resposta.statusCode());
+                return;
             }
+            if (resposta.statusCode() == 409 && resposta.body().contains("incrementar") && !incrementar) {
+                System.out.println(resposta.body());
+                System.out.println("Deseja incrementar a quantidade de exemplares? (s/n)");
+                String confirma = scanner.nextLine().trim();
+                if (confirma.equalsIgnoreCase("s")) {
+                    enviarCadastro(titulo, isbn, categoria, quantidade, true);
+                }
+                return;
+            }
+            System.out.println("Erro no cadastro: " + resposta.statusCode());
+            System.out.println(resposta.body());
         } catch (Exception e) {
             System.out.println("Erro no cadastro de livro : " + e.getMessage());
         }

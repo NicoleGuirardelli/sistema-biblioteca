@@ -6,6 +6,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 
 @Entity
 @Table(name = "livro")
@@ -27,6 +28,9 @@ public class Livro {
 
     @Column(name = "qtd_disponivel", nullable = false)
     private int qtdDisponivel;
+
+    @Transient
+    private boolean incrementar;
 
     public Integer getId() {
         return id;
@@ -74,5 +78,13 @@ public class Livro {
 
     public void setQtdDisponivel(int qtdDisponivel) {
         this.qtdDisponivel = qtdDisponivel;
+    }
+
+    public boolean isIncrementar() {
+        return incrementar;
+    }
+
+    public void setIncrementar(boolean incrementar) {
+        this.incrementar = incrementar;
     }
 }

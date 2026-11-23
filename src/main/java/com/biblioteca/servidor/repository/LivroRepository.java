@@ -2,6 +2,7 @@ package com.biblioteca.servidor.repository;
 
 import com.biblioteca.servidor.model.Livro;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -9,6 +10,8 @@ import org.springframework.data.repository.query.Param;
 
 public interface LivroRepository extends JpaRepository<Livro, Integer> {
     boolean existsByIsbn(String isbn);
+
+    Optional<Livro> findByIsbn(String isbn);
 
     @Query("""
             select l from Livro l

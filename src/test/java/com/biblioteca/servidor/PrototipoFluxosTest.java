@@ -242,6 +242,26 @@ class PrototipoFluxosTest {
     }
 
     @Test
+    void isbnExistenteIncrementaExemplares() throws Exception {
+        String tokenBibliotecario = token("B001");
+
+        mockMvc.perform(post("/livros")
+                        .header("Authorization", "Bearer " + tokenBibliotecario)
+                        .contentType("application/json")
+                        .content("{\"titulo\":\"Clean Code\",\"isbn\":\"9780132350884\",\"qtdTotal\":2}"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.mensagem").value("ISBN já cadastrado. Confirme para incrementar os exemplares."));
+
+        mockMvc.perform(post("/livros")
+                        .header("Authorization", "Bearer " + tokenBibliotecario)
+                        .contentType("application/json")
+                        .content("{\"titulo\":\"Clean Code\",\"isbn\":\"9780132350884\",\"qtdTotal\":2,\"incrementar\":true}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.qtdTotal").value(5))
+                .andExpect(jsonPath("$.qtdDisponivel").value(5));
+    }
+
+    @Test
     void duasRequisicoesSimultaneasPeloUltimoExemplar() throws Exception {
         Usuario ana = usuarioRepository.findByMatricula("2023001").orElseThrow();
         Usuario bruno = usuarioRepository.findByMatricula("2023002").orElseThrow();
