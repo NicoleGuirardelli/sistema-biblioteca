@@ -10,6 +10,7 @@ import com.biblioteca.servidor.repository.UsuarioRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import java.time.LocalDate;
+import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -92,6 +93,31 @@ public class EmprestimoService {
             throw new ApiException(500, "falha ao atualizar disponibilidade");
         }
         return emprestimo;
+    }
+
+    @Transactional(readOnly = true)
+    public List<Emprestimo> listarDoAluno(Usuario logado) {
+        if (logado.getPerfil() != Perfil.ALUNO) {
+            throw new ApiException(403, "sem permissão");
+        }
+        return emprestimoRepository.listarDoUsuario(logado.getId());
+    }
+
+    @Transactional(readOnly = true)
+    public List<Emprestimo> listarTodos(Usuario logado, String statusTexto, String termo) {
+        if (logado.getPerfil() != Perfil.BIBLIOTECARIO) {
+            throw new ApiException(403, "sem permissão");
+        }
+        StatusEmprestimo status = null;
+        if (statusTexto != null && !statusTexto.isBlank()) {
+            try {
+                status = StatusEmprestimo.valueOf(statusTexto.trim().toUpperCase());
+            } catch (IllegalArgumentException excecao) {
+                throw new ApiException(400, "dados inválidos");
+            }
+        }
+        String filtro = termo == null || termo.isBlank() ? null : termo.trim();
+        return emprestimoRepository.listar(status, filtro);
     }
 
     private Usuario localizarAluno(Usuario logado, String matriculaAluno) {

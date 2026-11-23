@@ -25,6 +25,7 @@ public class ClienteAluno {
             System.out.println("3 emprestar livro");
             System.out.println("4 devolver livro");
             System.out.println("5 sair");
+            System.out.println("6 meus emprestimos");
 
             Integer escolha = lerInteiro("escolha uma opcao");
             if (escolha == null) {
@@ -47,6 +48,9 @@ public class ClienteAluno {
                     break;
                 case 5:
                     System.out.println("Saindo..");
+                    break;
+                case 6:
+                    meusEmprestimos();
                     break;
                 default:
                     System.out.println("opcao invalida");
@@ -99,6 +103,17 @@ public class ClienteAluno {
                 .header("Authorization", "Bearer " + token);
     }
 
+    public static void meusEmprestimos() {
+        try {
+            HttpClient cliente = HttpClient.newHttpClient();
+            HttpRequest requisicao = comToken("http://localhost:8080/emprestimos/meus").GET().build();
+            HttpResponse<String> resposta = cliente.send(requisicao, HttpResponse.BodyHandlers.ofString());
+            System.out.println(resposta.body());
+        } catch (Exception e) {
+            System.out.println("Erro ao consultar emprestimos: " + e.getMessage());
+        }
+    }
+
     public static void consultarLivros() {
         try {
             System.out.println("Digite titulo ou categoria, ou enter para listar todos: ");
@@ -112,8 +127,12 @@ public class ClienteAluno {
 
             HttpResponse<String> resposta = cliente.send(requisicao, HttpResponse.BodyHandlers.ofString());
 
-            System.out.println("Livros disponiveis");
-            System.out.println(resposta.body());
+            if (resposta.body() != null && resposta.body().trim().equals("[]")) {
+                System.out.println("Nenhum resultado");
+            } else {
+                System.out.println("Livros disponiveis");
+                System.out.println(resposta.body());
+            }
 
         } catch (Exception e) {
             System.out.println("Erro na consulta: " + e.getMessage());
