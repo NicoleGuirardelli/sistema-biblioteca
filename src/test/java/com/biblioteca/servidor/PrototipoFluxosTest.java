@@ -262,6 +262,29 @@ class PrototipoFluxosTest {
     }
 
     @Test
+    void bibliotecarioDevolveEmprestimoDoAluno() throws Exception {
+        String tokenAna = token("2023001");
+        String tokenBibliotecario = token("B001");
+        int livro = idDoLivro("9780201633610", tokenAna);
+
+        MvcResult emprestimo = mockMvc.perform(post("/emprestimos")
+                        .header("Authorization", "Bearer " + tokenAna)
+                        .contentType("application/json")
+                        .content("{\"livroId\":" + livro + "}"))
+                .andExpect(status().isOk())
+                .andReturn();
+        int emprestimoId = jsonMapper.readTree(emprestimo.getResponse().getContentAsString()).get("id").asInt();
+
+        mockMvc.perform(post("/emprestimos/" + emprestimoId + "/devolucao")
+                        .header("Authorization", "Bearer " + tokenBibliotecario))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("ENCERRADO"));
+
+        mockMvc.perform(get("/livros/" + livro).header("Authorization", "Bearer " + tokenBibliotecario))
+                .andExpect(jsonPath("$.qtdDisponivel").value(2));
+    }
+
+    @Test
     void duasRequisicoesSimultaneasPeloUltimoExemplar() throws Exception {
         Usuario ana = usuarioRepository.findByMatricula("2023001").orElseThrow();
         Usuario bruno = usuarioRepository.findByMatricula("2023002").orElseThrow();
