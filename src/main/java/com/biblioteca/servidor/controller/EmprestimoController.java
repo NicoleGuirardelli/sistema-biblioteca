@@ -4,10 +4,13 @@ import com.biblioteca.servidor.model.Emprestimo;
 import com.biblioteca.servidor.model.Usuario;
 import com.biblioteca.servidor.service.EmprestimoService;
 import jakarta.servlet.http.HttpServletRequest;
+import java.util.List;
 import java.util.Map;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -18,6 +21,24 @@ public class EmprestimoController {
 
     public EmprestimoController(EmprestimoService emprestimoService) {
         this.emprestimoService = emprestimoService;
+    }
+
+    @GetMapping("/emprestimos/meus")
+    public List<EmprestimoResponse> meus(HttpServletRequest request) {
+        Usuario logado = (Usuario) request.getAttribute(USUARIO_LOGADO);
+        return emprestimoService.listarDoAluno(logado).stream()
+                .map(emprestimo -> EmprestimoResponse.deEmprestimo(emprestimo, null))
+                .toList();
+    }
+
+    @GetMapping("/emprestimos")
+    public List<EmprestimoResponse> listar(@RequestParam(required = false) String status,
+                                           @RequestParam(required = false) String q,
+                                           HttpServletRequest request) {
+        Usuario logado = (Usuario) request.getAttribute(USUARIO_LOGADO);
+        return emprestimoService.listarTodos(logado, status, q).stream()
+                .map(emprestimo -> EmprestimoResponse.deEmprestimo(emprestimo, null))
+                .toList();
     }
 
     @PostMapping("/emprestimos")

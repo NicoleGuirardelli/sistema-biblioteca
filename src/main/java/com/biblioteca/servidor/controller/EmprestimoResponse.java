@@ -1,11 +1,12 @@
 package com.biblioteca.servidor.controller;
 
-import com.biblioteca.servidor.model.Usuario;
 import java.time.LocalDate;
 
 public record EmprestimoResponse(
         Integer id,
         Integer usuarioId,
+        String nome,
+        String matricula,
         Integer livroId,
         String titulo,
         LocalDate dataEmprestimo,
@@ -19,26 +20,10 @@ public record EmprestimoResponse(
         return new EmprestimoResponse(
                 emprestimo.getId(),
                 emprestimo.getUsuario().getId(),
+                emprestimo.getUsuario().getNome(),
+                emprestimo.getUsuario().getMatricula(),
                 emprestimo.getLivro().getId(),
                 emprestimo.getLivro().getTitulo(),
-                emprestimo.getDataEmprestimo(),
-                emprestimo.getDataPrevista(),
-                emprestimo.getDataDevolucao(),
-                emprestimo.getStatus().name(),
-                emprestimo.isEmAtraso(),
-                mensagem
-        );
-    }
-
-    public static EmprestimoResponse deReferencias(com.biblioteca.servidor.model.Emprestimo emprestimo,
-                                                    Usuario usuario,
-                                                    com.biblioteca.servidor.model.Livro livro,
-                                                    String mensagem) {
-        return new EmprestimoResponse(
-                emprestimo.getId(),
-                usuario.getId(),
-                livro.getId(),
-                livro.getTitulo(),
                 emprestimo.getDataEmprestimo(),
                 emprestimo.getDataPrevista(),
                 emprestimo.getDataDevolucao(),

@@ -1,7 +1,9 @@
 package com.biblioteca.cliente;
 
 import java.net.URI;
+import java.net.URLEncoder;
 import java.net.http.*;
+import java.nio.charset.StandardCharsets;
 import java.util.Scanner;
 
 public class ClienteBibliotecario  {
@@ -23,6 +25,7 @@ public class ClienteBibliotecario  {
             System.out.println("3 atualizar livro");
             System.out.println("4 deletar livro");
             System.out.println("5 sair");
+            System.out.println("6 listar emprestimos");
             System.out.println("escolha uma opcao");
 
             if(!scanner.hasNextInt()){
@@ -49,6 +52,9 @@ public class ClienteBibliotecario  {
                     break;
                 case 5:
                     System.out.println("Saindo..");
+                    break;
+                case 6:
+                    listarEmprestimos();
                     break;
                 default:
                     System.out.println("opcao invalida");
@@ -88,6 +94,37 @@ public class ClienteBibliotecario  {
         return HttpRequest.newBuilder()
                 .uri(URI.create(url))
                 .header("Authorization", "Bearer " + token);
+    }
+
+    public static void listarEmprestimos() {
+        System.out.println("Status (ATIVO, ENCERRADO ou enter): ");
+        String status = scanner.nextLine().trim();
+        System.out.println("Titulo ou matricula, ou enter para todos: ");
+        String termo = scanner.nextLine().trim();
+
+        String url = "http://localhost:8080/emprestimos";
+        String consulta = "";
+        if (!status.isEmpty()) {
+            consulta = "status=" + URLEncoder.encode(status, StandardCharsets.UTF_8);
+        }
+        if (!termo.isEmpty()) {
+            if (!consulta.isEmpty()) {
+                consulta += "&";
+            }
+            consulta += "q=" + URLEncoder.encode(termo, StandardCharsets.UTF_8);
+        }
+        if (!consulta.isEmpty()) {
+            url += "?" + consulta;
+        }
+
+        try {
+            HttpClient cliente = HttpClient.newHttpClient();
+            HttpRequest requisicao = comToken(url).GET().build();
+            HttpResponse<String> resposta = cliente.send(requisicao, HttpResponse.BodyHandlers.ofString());
+            System.out.println(resposta.body());
+        } catch (Exception e) {
+            System.out.println("Erro ao listar emprestimos: " + e.getMessage());
+        }
     }
 
     public static void consultarLivros() {

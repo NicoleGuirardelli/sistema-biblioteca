@@ -134,6 +134,64 @@ class PrototipoFluxosTest {
                 .andExpect(jsonPath("$.dataPrevista").exists());
     }
 
+    @Test
+    void alunoVeSoOsPropriosEmprestimosEBibliotecarioVeTodos() throws Exception {
+        String tokenAna = token("2023001");
+        String tokenBruno = token("2023002");
+        String tokenBibliotecario = token("B001");
+        int livroAna = idDoLivro("9780132350884", tokenAna);
+        int livroBruno = idDoLivro("9780201633610", tokenBruno);
+
+        mockMvc.perform(post("/emprestimos")
+                        .header("Authorization", "Bearer " + tokenAna)
+                        .contentType("application/json")
+                        .content("{\"livroId\":" + livroAna + "}"))
+                .andExpect(status().isOk());
+        mockMvc.perform(post("/emprestimos")
+                        .header("Authorization", "Bearer " + tokenBruno)
+                        .contentType("application/json")
+                        .content("{\"livroId\":" + livroBruno + "}"))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/emprestimos/meus").header("Authorization", "Bearer " + tokenAna))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].matricula").value("2023001"));
+
+        mockMvc.perform(get("/emprestimos/meus").header("Authorization", "Bearer " + tokenBruno))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].matricula").value("2023002"));
+
+        mockMvc.perform(get("/emprestimos").header("Authorization", "Bearer " + tokenAna))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(get("/emprestimos/meus").header("Authorization", "Bearer " + tokenBibliotecario))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(get("/emprestimos").header("Authorization", "Bearer " + tokenBibliotecario))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(2));
+
+        mockMvc.perform(get("/emprestimos")
+                        .param("status", "ATIVO")
+                        .param("q", "2023001")
+                        .header("Authorization", "Bearer " + tokenBibliotecario))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].titulo").value("Clean Code"));
+
+        mockMvc.perform(get("/emprestimos")
+                        .param("status", "ENCERRADO")
+                        .header("Authorization", "Bearer " + tokenBibliotecario))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(0));
+
+        mockMvc.perform(get("/emprestimos")
+                        .param("status", "QUALQUER")
+                        .header("Authorization", "Bearer " + tokenBibliotecario))
+                .andExpect(status().isBadRequest());
+    }
+
     private String token(String matricula) throws Exception {
         MvcResult resultado = mockMvc.perform(post("/auth/login")
                         .contentType("application/json")
