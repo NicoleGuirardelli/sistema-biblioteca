@@ -238,7 +238,7 @@ class PrototipoFluxosTest {
         mockMvc.perform(post("/livros")
                         .header("Authorization", "Bearer " + tokenBibliotecario)
                         .contentType("application/json")
-                        .content("{\"titulo\":\"Livro novo\",\"isbn\":\"9780000000001\",\"qtdTotal\":2}"))
+                        .content("{\"titulo\":\"Livro novo\",\"autor\":\"Autor Novo\",\"isbn\":\"9780000000001\",\"categoria\":\"Geral\",\"qtdTotal\":2}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.titulo").value("Livro novo"));
     }
@@ -250,17 +250,28 @@ class PrototipoFluxosTest {
         mockMvc.perform(post("/livros")
                         .header("Authorization", "Bearer " + tokenBibliotecario)
                         .contentType("application/json")
-                        .content("{\"titulo\":\"Clean Code\",\"isbn\":\"9780132350884\",\"qtdTotal\":2}"))
+                        .content("{\"titulo\":\"Clean Code\",\"autor\":\"Robert C. Martin\",\"isbn\":\"9780132350884\",\"categoria\":\"Software\",\"qtdTotal\":2}"))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.mensagem").value("ISBN já cadastrado. Confirme para incrementar os exemplares."));
 
         mockMvc.perform(post("/livros")
                         .header("Authorization", "Bearer " + tokenBibliotecario)
                         .contentType("application/json")
-                        .content("{\"titulo\":\"Clean Code\",\"isbn\":\"9780132350884\",\"qtdTotal\":2,\"incrementar\":true}"))
+                        .content("{\"titulo\":\"Clean Code\",\"autor\":\"Robert C. Martin\",\"isbn\":\"9780132350884\",\"categoria\":\"Software\",\"qtdTotal\":2,\"incrementar\":true}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.qtdTotal").value(5))
                 .andExpect(jsonPath("$.qtdDisponivel").value(5));
+    }
+
+    @Test
+    void cadastroSemCamposObrigatoriosEhRecusado() throws Exception {
+        String tokenBibliotecario = token("B001");
+
+        mockMvc.perform(post("/livros")
+                        .header("Authorization", "Bearer " + tokenBibliotecario)
+                        .contentType("application/json")
+                        .content("{\"titulo\":\"Livro incompleto\"}"))
+                .andExpect(status().isBadRequest());
     }
 
     @Test

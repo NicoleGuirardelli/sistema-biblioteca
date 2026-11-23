@@ -34,7 +34,19 @@ public class BibliotecaService {
         if (dados.getTitulo() == null || dados.getTitulo().isBlank()) {
             throw new ApiException(400, "Informe o título");
         }
-        int quantidade = dados.getQtdTotal() > 0 ? dados.getQtdTotal() : 1;
+        if (dados.getAutor() == null || dados.getAutor().isBlank()) {
+            throw new ApiException(400, "Informe o autor");
+        }
+        if (dados.getIsbn() == null || dados.getIsbn().isBlank()) {
+            throw new ApiException(400, "Informe o ISBN");
+        }
+        if (dados.getCategoria() == null || dados.getCategoria().isBlank()) {
+            throw new ApiException(400, "Informe a categoria");
+        }
+        if (dados.getQtdTotal() <= 0) {
+            throw new ApiException(400, "Informe a quantidade de exemplares");
+        }
+        int quantidade = dados.getQtdTotal();
         String isbn = textoOuNulo(dados.getIsbn());
         if (isbn != null) {
             Livro existente = livroRepository.findByIsbn(isbn).orElse(null);
