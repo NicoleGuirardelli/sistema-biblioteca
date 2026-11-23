@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Biblioteca</title>
+    <style>
+        body { font-family: sans-serif; max-width: 760px; margin: 2rem auto; padding: 0 1rem; color: #1d1d1d; }
+        h1 { font-size: 1.4rem; }
+        section { border: 1px solid #ccc; padding: 1rem; margin-bottom: 1rem; }
+        label { display: block; margin-bottom: 0.3rem; }
+        input, button { font: inherit; padding: 0.4rem 0.6rem; }
+        button { cursor: pointer; }
+        .linha { display: flex; gap: 0.5rem; align-items: end; flex-wrap: wrap; }
+        article { display: flex; justify-content: space-between; gap: 1rem; border-top: 1px solid #eee; padding: 0.7rem 0; }
+        #mensagem { min-height: 1.2rem; }
+        .oculto { display: none; }
+    </style>
+</head>
+<body>
+<header>
+    <h1>Biblioteca universitária</h1>
+    <p>Usuários de teste: 2023001, 2023002, 2023003 (alunos) e B001 (bibliotecário).</p>
+</header>
+
+<section>
+    <form id="login">
+        <label for="matricula">Matrícula</label>
+        <div class="linha">
+            <input id="matricula" required>
+            <button type="submit">Entrar</button>
+        </div>
+    </form>
+    <p id="sessao"></p>
+</section>
+
+<section id="busca" class="oculto">
+    <form id="pesquisa">
+        <label for="termo">Título ou categoria</label>
+        <div class="linha">
+            <input id="termo" placeholder="Deixe vazio para listar o acervo">
+            <button type="submit">Buscar</button>
+        </div>
+    </form>
+    <div id="aluno-alvo" class="oculto">
+        <label for="matricula-aluno">Matrícula do aluno</label>
+        <input id="matricula-aluno" placeholder="2023001">
+    </div>
+    <p id="mensagem"></p>
+    <div id="resultados"></div>
+</section>
+
+<script>
+    let token = "";
+    let perfil = "";
+
+    const sessao = document.querySelector("#sessao");
+    const busca = document.querySelector("#busca");
+    const mensagem = document.querySelector("#mensagem");
+    const resultados = document.querySelector("#resultados");
+    const alunoAlvo = document.querySelector("#aluno-alvo");
+
+    document.querySelector("#login").addEventListener("submit", async (evento) => {
+        evento.preventDefault();
+        const matricula = document.querySelector("#matricula").value.trim();
+        const resposta = await fetch("/auth/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ matricula })
+        });
+        const corpo = await resposta.json();
+        if (!resposta.ok) {
+            sessao.textContent = corpo.mensagem;
+            return;
+        }
+        token = corpo.token;
+        perfil = corpo.perfil;
+        sessao.textContent = corpo.nome + " · " + corpo.perfil;
+        busca.classList.remove("oculto");
+        alunoAlvo.classList.toggle("oculto", perfil !== "BIBLIOTECARIO");
+        buscar("");
+    });
+
+    document.querySelector("#pesquisa").addEventListener("submit", (evento) => {
+        evento.preventDefault();
+        buscar(document.querySelector("#termo").value.trim());
+    });
+
+    async function buscar(termo) {
+        const url = termo ? "/livros?q=" + encodeURIComponent(termo) : "/livros";
+        const resposta = await fetch(url, { headers: { Authorization: "Bearer " + token } });
+        const livros = await resposta.json();
+        if (!resposta.ok) {
+            mensagem.textContent = livros.mensagem;
+            return;
+        }
+        if (livros.length === 0) {
+            resultados.innerHTML = "";
+            mensagem.textContent = "Nenhum Resultado";
+            return;
+        }
+        mensagem.textContent = "";
+        resultados.innerHTML = "";
+        for (const livro of livros) {
+            const artigo = document.createElement("article");
+            const texto = document.createElement("div");
+            texto.textContent = livro.titulo + " · " + (livro.categoria || "sem categoria")
+                + " · disponíveis " + livro.qtdDisponivel + "/" + livro.qtdTotal;
+            const botao = document.createElement("button");
+            botao.type = "button";
+            botao.textContent = "Emprestar";
+            botao.disabled = livro.qtdDisponivel < 1;
+            botao.addEventListener("click", () => emprestar(livro.id));
+            artigo.append(texto, botao);
+            resultados.append(artigo);
+        }
+    }
+
+    async function emprestar(livroId) {
+        const corpo = { livroId };
+        if (perfil === "BIBLIOTECARIO") {
+            corpo.matriculaAluno = document.querySelector("#matricula-aluno").value.trim();
+        }
+        const resposta = await fetch("/emprestimos", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: "Bearer " + token
+            },
+            body: JSON.stringify(corpo)
+        });
+        const resultado = await resposta.json();
+        mensagem.textContent = resultado.mensagem;
+        if (resposta.ok) {
+            const botao = document.createElement("button");
+            botao.type = "button";
+            botao.textContent = "Devolver empréstimo " + resultado.id;
+            botao.addEventListener("click", () => devolver(resultado.id));
+            mensagem.append(" ", botao);
+        }
+        buscar(document.querySelector("#termo").value.trim());
+    }
+
+    async function devolver(emprestimoId) {
+        const resposta = await fetch("/emprestimos/" + emprestimoId + "/devolucao", {
+            method: "POST",
+            headers: { Authorization: "Bearer " + token }
+        });
+        const resultado = await resposta.json();
+        mensagem.textContent = resultado.mensagem;
+        buscar(document.querySelector("#termo").value.trim());
+    }
+</script>
+</body>
+</html>

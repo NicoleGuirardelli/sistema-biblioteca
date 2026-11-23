@@ -1,55 +1,70 @@
 package com.biblioteca.servidor.model;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 import java.time.LocalDate;
 
+@Entity
+@Table(name = "emprestimo")
 public class Emprestimo {
     public static final int PRAZO_DIAS = 14;
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
-    private Aluno aluno;
+
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "usuario_id", nullable = false)
+    private Usuario usuario;
+
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "livro_id", nullable = false)
     private Livro livro;
+
+    @Column(name = "data_emprestimo", nullable = false)
     private LocalDate dataEmprestimo;
-    private LocalDate dataPrevistaDevolucao;
+
+    @Column(name = "data_prevista", nullable = false)
+    private LocalDate dataPrevista;
+
+    @Column(name = "data_devolucao")
     private LocalDate dataDevolucao;
-    private SituacaoEmprestimo situacao;
 
-    public Emprestimo() {}
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private StatusEmprestimo status;
 
-    public Emprestimo(Integer id, Aluno aluno, Livro livro, LocalDate dataEmprestimo) {
-        this.id = id;
-        this.aluno = aluno;
-        this.livro = livro;
-        this.dataEmprestimo = dataEmprestimo;
-        this.dataPrevistaDevolucao = dataEmprestimo.plusDays(PRAZO_DIAS);
-        this.situacao = SituacaoEmprestimo.ATIVO;
-    }
+    @Column(name = "em_atraso", nullable = false)
+    private boolean emAtraso;
 
-    public void registrarDevolucao(LocalDate dataDevolucao) {
+    public void encerrar(LocalDate dataDevolucao) {
         this.dataDevolucao = dataDevolucao;
-        this.situacao = SituacaoEmprestimo.ENCERRADO;
+        this.emAtraso = dataDevolucao.isAfter(dataPrevista);
+        this.status = StatusEmprestimo.ENCERRADO;
     }
 
-    public boolean isAtrasado(LocalDate dataReferencia) {
-        if (situacao == SituacaoEmprestimo.ENCERRADO) {
-            return dataDevolucao != null && dataDevolucao.isAfter(dataPrevistaDevolucao);
-        }
-        return dataReferencia.isAfter(dataPrevistaDevolucao);
-    }
-
-    public int getId() {
+    public Integer getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(Integer id) {
         this.id = id;
     }
 
-    public Aluno getAluno() {
-        return aluno;
+    public Usuario getUsuario() {
+        return usuario;
     }
 
-    public void setAluno(Aluno aluno) {
-        this.aluno = aluno;
+    public void setUsuario(Usuario usuario) {
+        this.usuario = usuario;
     }
 
     public Livro getLivro() {
@@ -68,12 +83,12 @@ public class Emprestimo {
         this.dataEmprestimo = dataEmprestimo;
     }
 
-    public LocalDate getDataPrevistaDevolucao() {
-        return dataPrevistaDevolucao;
+    public LocalDate getDataPrevista() {
+        return dataPrevista;
     }
 
-    public void setDataPrevistaDevolucao(LocalDate dataPrevistaDevolucao) {
-        this.dataPrevistaDevolucao = dataPrevistaDevolucao;
+    public void setDataPrevista(LocalDate dataPrevista) {
+        this.dataPrevista = dataPrevista;
     }
 
     public LocalDate getDataDevolucao() {
@@ -84,11 +99,19 @@ public class Emprestimo {
         this.dataDevolucao = dataDevolucao;
     }
 
-    public SituacaoEmprestimo getSituacao() {
-        return situacao;
+    public StatusEmprestimo getStatus() {
+        return status;
     }
 
-    public void setSituacao(SituacaoEmprestimo situacao) {
-        this.situacao = situacao;
+    public void setStatus(StatusEmprestimo status) {
+        this.status = status;
+    }
+
+    public boolean isEmAtraso() {
+        return emAtraso;
+    }
+
+    public void setEmAtraso(boolean emAtraso) {
+        this.emAtraso = emAtraso;
     }
 }

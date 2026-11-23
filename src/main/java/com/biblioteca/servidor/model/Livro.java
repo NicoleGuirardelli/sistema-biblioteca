@@ -1,64 +1,47 @@
 package com.biblioteca.servidor.model;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+
+@Entity
+@Table(name = "livro")
 public class Livro {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
+
+    @Column(nullable = false)
     private String titulo;
-    private String autor;
+
+    @Column(unique = true)
     private String isbn;
+
     private String categoria;
-    private int quantidadeExemplares;
-    private int quantidadeDisponivel;
-    private boolean disponivel;
 
-    public Livro(){}
+    @Column(name = "qtd_total", nullable = false)
+    private int qtdTotal;
 
-    public Livro(Integer id, String titulo, String autor) {
-        this(id, titulo, autor, null, null, 1);
-    }
+    @Column(name = "qtd_disponivel", nullable = false)
+    private int qtdDisponivel;
 
-    public Livro(Integer id, String titulo, String autor, String isbn, String categoria, int quantidadeExemplares) {
-        this.id = id;
-        this.titulo = titulo;
-        this.autor = autor;
-        this.isbn = isbn;
-        this.categoria = categoria;
-        this.quantidadeExemplares = quantidadeExemplares;
-        this.quantidadeDisponivel = quantidadeExemplares;
-        this.disponivel = quantidadeExemplares > 0;
-    }
-
-    //métodos get e set
-    public int getId() {
+    public Integer getId() {
         return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
     }
 
     public String getTitulo() {
         return titulo;
     }
 
-    public String getAutor() {
-        return autor;
-    }
-
-    public boolean isDisponivel() {
-        return disponivel;
-    }
-
-    public void setId(int id) {
-        this.id = id;
-    }
-
     public void setTitulo(String titulo) {
         this.titulo = titulo;
-    }
-
-    public void setAutor(String autor) {
-        this.autor = autor;
-    }
-
-    public void setDisponivel(boolean disponivel) {
-        this.disponivel = disponivel;
-
     }
 
     public String getIsbn() {
@@ -77,19 +60,19 @@ public class Livro {
         this.categoria = categoria;
     }
 
-    public int getQuantidadeExemplares() {
-        return quantidadeExemplares;
+    public int getQtdTotal() {
+        return qtdTotal;
     }
 
-    public void setQuantidadeExemplares(int quantidadeExemplares) {
-        this.quantidadeExemplares = quantidadeExemplares;
+    public void setQtdTotal(int qtdTotal) {
+        this.qtdTotal = qtdTotal;
     }
 
-    public int getQuantidadeDisponivel() {
-        return quantidadeDisponivel;
+    public int getQtdDisponivel() {
+        return qtdDisponivel;
     }
 
-    public void setQuantidadeDisponivel(int quantidadeDisponivel) {
-        this.quantidadeDisponivel = quantidadeDisponivel;
+    public void setQtdDisponivel(int qtdDisponivel) {
+        this.qtdDisponivel = qtdDisponivel;
     }
 }

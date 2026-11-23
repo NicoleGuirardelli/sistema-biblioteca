@@ -1,6 +1,6 @@
 package com.biblioteca.servidor.model;
 
-public enum SituacaoEmprestimo {
+public enum StatusEmprestimo {
     ATIVO,
     ENCERRADO
 }
