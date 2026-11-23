@@ -137,7 +137,7 @@ public class ClienteBibliotecario  {
 
     public static void consultarLivros() {
         try {
-            System.out.println("Digite titulo ou categoria, ou enter para listar todos: ");
+            System.out.println("Digite titulo, autor ou categoria, ou enter para listar todos: ");
             String termo = scanner.nextLine().trim();
             String url = termo.isEmpty()
                     ? "http://localhost:8080/livros"
@@ -198,6 +198,8 @@ public class ClienteBibliotecario  {
     public static void cadastrarLivro() {
         System.out.println("Digite o nome do livro: ");
         String titulo = scanner.nextLine();
+        System.out.println("Digite o autor do livro: ");
+        String autor = scanner.nextLine().trim();
         System.out.println("Digite o ISBN, ou enter para deixar vazio: ");
         String isbn = scanner.nextLine().trim();
         System.out.println("Digite a categoria, ou enter para deixar vazia: ");
@@ -213,13 +215,13 @@ public class ClienteBibliotecario  {
                 return;
             }
         }
-        enviarCadastro(titulo, isbn, categoria, quantidade, false);
+        enviarCadastro(titulo, autor, isbn, categoria, quantidade, false);
     }
 
-    public static void enviarCadastro(String titulo, String isbn, String categoria, int quantidade, boolean incrementar) {
+    public static void enviarCadastro(String titulo, String autor, String isbn, String categoria, int quantidade, boolean incrementar) {
         String json = String.format(
-                "{\"titulo\":\"%s\",\"isbn\":\"%s\",\"categoria\":\"%s\",\"qtdTotal\":%d,\"incrementar\":%s}",
-                titulo, isbn, categoria, quantidade, incrementar);
+                "{\"titulo\":\"%s\",\"autor\":\"%s\",\"isbn\":\"%s\",\"categoria\":\"%s\",\"qtdTotal\":%d,\"incrementar\":%s}",
+                titulo, autor, isbn, categoria, quantidade, incrementar);
         try {
             HttpClient cliente = HttpClient.newHttpClient();
             HttpRequest requisicao = comToken("http://localhost:8080/livros")
@@ -237,7 +239,7 @@ public class ClienteBibliotecario  {
                 System.out.println("Deseja incrementar a quantidade de exemplares? (s/n)");
                 String confirma = scanner.nextLine().trim();
                 if (confirma.equalsIgnoreCase("s")) {
-                    enviarCadastro(titulo, isbn, categoria, quantidade, true);
+                    enviarCadastro(titulo, autor, isbn, categoria, quantidade, true);
                 }
                 return;
             }
@@ -277,12 +279,17 @@ public class ClienteBibliotecario  {
             scanner.nextLine(); // para limpar o buffer e o titulo do livro nao ficar vazio
             System.out.println("Digite o nome do livro: ");
             String titulo = scanner.nextLine();
+            System.out.println("Digite o autor, ou enter para manter: ");
+            String autor = scanner.nextLine().trim();
             System.out.println("Digite o ISBN, ou enter para manter: ");
             String isbn = scanner.nextLine().trim();
             System.out.println("Digite a categoria, ou enter para manter: ");
             String categoria = scanner.nextLine().trim();
 
             String json = "{\"titulo\":\"" + titulo + "\"";
+            if (!autor.isEmpty()) {
+                json += ",\"autor\":\"" + autor + "\"";
+            }
             if (!isbn.isEmpty()) {
                 json += ",\"isbn\":\"" + isbn + "\"";
             }

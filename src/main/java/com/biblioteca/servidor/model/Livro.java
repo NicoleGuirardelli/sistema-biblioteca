@@ -18,6 +18,8 @@ public class Livro {
     @Column(nullable = false)
     private String titulo;
 
+    private String autor;
+
     @Column(unique = true)
     private String isbn;
 
@@ -46,6 +48,14 @@ public class Livro {
 
     public void setTitulo(String titulo) {
         this.titulo = titulo;
+    }
+
+    public String getAutor() {
+        return autor;
+    }
+
+    public void setAutor(String autor) {
+        this.autor = autor;
     }
 
     public String getIsbn() {

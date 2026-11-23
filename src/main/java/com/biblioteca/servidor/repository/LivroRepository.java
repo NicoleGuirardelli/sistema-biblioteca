@@ -16,6 +16,7 @@ public interface LivroRepository extends JpaRepository<Livro, Integer> {
     @Query("""
             select l from Livro l
             where lower(l.titulo) like lower(concat('%', :termo, '%'))
+               or lower(l.autor) like lower(concat('%', :termo, '%'))
                or lower(l.categoria) like lower(concat('%', :termo, '%'))
                or lower(l.isbn) like lower(concat('%', :termo, '%'))
             """)

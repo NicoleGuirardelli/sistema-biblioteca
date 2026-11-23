@@ -50,6 +50,7 @@ public class BibliotecaService {
 
         Livro livro = new Livro();
         livro.setTitulo(dados.getTitulo().trim());
+        livro.setAutor(textoOuNulo(dados.getAutor()));
         livro.setIsbn(isbn);
         livro.setCategoria(textoOuNulo(dados.getCategoria()));
         livro.setQtdTotal(quantidade);
@@ -65,6 +66,9 @@ public class BibliotecaService {
         }
         if (dados.getTitulo() != null && !dados.getTitulo().isBlank()) {
             livro.setTitulo(dados.getTitulo().trim());
+        }
+        if (dados.getAutor() != null) {
+            livro.setAutor(textoOuNulo(dados.getAutor()));
         }
         if (dados.getCategoria() != null) {
             livro.setCategoria(textoOuNulo(dados.getCategoria()));

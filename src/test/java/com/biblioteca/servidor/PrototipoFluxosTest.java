@@ -53,7 +53,7 @@ class PrototipoFluxosTest {
     @Test
     void tabelasSeguemOModeloDaDocumentacao() {
         assertColunas("USUARIO", Set.of("ID", "NOME", "MATRICULA", "PERFIL", "ATIVO"));
-        assertColunas("LIVRO", Set.of("ID", "TITULO", "ISBN", "CATEGORIA", "QTD_TOTAL", "QTD_DISPONIVEL"));
+        assertColunas("LIVRO", Set.of("ID", "TITULO", "AUTOR", "ISBN", "CATEGORIA", "QTD_TOTAL", "QTD_DISPONIVEL"));
         assertColunas("EMPRESTIMO", Set.of(
                 "ID", "USUARIO_ID", "LIVRO_ID", "DATA_EMPRESTIMO", "DATA_PREVISTA",
                 "DATA_DEVOLUCAO", "STATUS", "EM_ATRASO"));
@@ -75,9 +75,11 @@ class PrototipoFluxosTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(0));
 
-        mockMvc.perform(get("/livros").param("q", "Literatura").header("Authorization", "Bearer " + tokenAna))
+        mockMvc.perform(get("/livros").param("q", "Machado").header("Authorization", "Bearer " + tokenAna))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].categoria").value("Literatura"));
+                .andExpect(jsonPath("$[0].titulo").value("Dom Casmurro"))
+                .andExpect(jsonPath("$[0].autor").value("Machado de Assis"))
+                .andExpect(jsonPath("$[0].qtdDisponivel").value(4));
 
         int livroUnico = idDoLivro("9788575225632", tokenAna);
         MvcResult emprestimo = mockMvc.perform(post("/emprestimos")
