@@ -1,7 +1,11 @@
 package com.biblioteca.servidor.controller;
 
 import com.biblioteca.servidor.model.Livro;
+import com.biblioteca.servidor.model.Perfil;
+import com.biblioteca.servidor.model.Usuario;
+import com.biblioteca.servidor.service.ApiException;
 import com.biblioteca.servidor.service.BibliotecaService;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
@@ -25,7 +29,8 @@ public class BibliotecaController {
     }
 
     @PostMapping("/livros")
-    public Livro cadastrarLivro(@RequestBody Livro livro) {
+    public Livro cadastrarLivro(@RequestBody Livro livro, HttpServletRequest request) {
+        exigirBibliotecario(request);
         return bibliotecaService.cadastrarLivro(livro);
     }
 
@@ -39,12 +44,21 @@ public class BibliotecaController {
     }
 
     @PutMapping("/livros/{id}")
-    public String atualizarLivro(@PathVariable int id, @RequestBody Livro livro) {
+    public String atualizarLivro(@PathVariable int id, @RequestBody Livro livro, HttpServletRequest request) {
+        exigirBibliotecario(request);
         return bibliotecaService.atualizarLivro(id, livro);
     }
 
     @DeleteMapping("/livros/{id}")
-    public String deletarLivro(@PathVariable int id) {
+    public String deletarLivro(@PathVariable int id, HttpServletRequest request) {
+        exigirBibliotecario(request);
         return bibliotecaService.deletarLivro(id);
+    }
+
+    private void exigirBibliotecario(HttpServletRequest request) {
+        Usuario logado = (Usuario) request.getAttribute(EmprestimoController.USUARIO_LOGADO);
+        if (logado == null || logado.getPerfil() != Perfil.BIBLIOTECARIO) {
+            throw new ApiException(403, "sem permissão");
+        }
     }
 }

@@ -3,6 +3,7 @@ package com.biblioteca.servidor;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -206,6 +207,38 @@ class PrototipoFluxosTest {
                         .param("status", "QUALQUER")
                         .header("Authorization", "Bearer " + tokenBibliotecario))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void alunoConsultaMasNaoAlteraOAcervo() throws Exception {
+        String tokenAna = token("2023001");
+        String tokenBibliotecario = token("B001");
+        int livro = idDoLivro("9780132350884", tokenAna);
+
+        mockMvc.perform(get("/livros").header("Authorization", "Bearer " + tokenAna))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(post("/livros")
+                        .header("Authorization", "Bearer " + tokenAna)
+                        .contentType("application/json")
+                        .content("{\"titulo\":\"Livro do aluno\"}"))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(put("/livros/" + livro)
+                        .header("Authorization", "Bearer " + tokenAna)
+                        .contentType("application/json")
+                        .content("{\"titulo\":\"Titulo alterado\"}"))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(delete("/livros/" + livro).header("Authorization", "Bearer " + tokenAna))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(post("/livros")
+                        .header("Authorization", "Bearer " + tokenBibliotecario)
+                        .contentType("application/json")
+                        .content("{\"titulo\":\"Livro novo\",\"isbn\":\"9780000000001\",\"qtdTotal\":2}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.titulo").value("Livro novo"));
     }
 
     @Test
