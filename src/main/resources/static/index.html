@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Biblioteca Universitária</title>
+<link rel="icon" href="data:,">
+<style>
+  :root {
+    --fundo: #f5f3ef;
+    --painel: #ffffff;
+    --texto: #1f2328;
+    --suave: #5f6670;
+    --borda: #dcd8d0;
+    --primaria: #1f4e79;
+    --primaria-escura: #173b5c;
+    --ok: #1e6b3a;
+    --ok-fundo: #e6f2ea;
+    --erro: #a3261c;
+    --erro-fundo: #fbe9e7;
+    --aviso: #7a5200;
+    --aviso-fundo: #fdf3dc;
+    --raio: 8px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-size: 15px;
+    line-height: 1.45;
+    background: var(--fundo);
+    color: var(--texto);
+  }
+  header.topo {
+    background: var(--primaria);
+    color: #fff;
+  }
+  header.topo .conteudo {
+    max-width: 1040px;
+    margin: 0 auto;
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+  header.topo h1 { margin: 0; font-size: 1.15rem; font-weight: 600; }
+  #usuario-info { display: flex; align-items: center; gap: 12px; font-size: 0.9rem; }
+  #usuario-info .perfil {
+    background: rgba(255,255,255,0.15);
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    letter-spacing: 0.02em;
+  }
+  main { max-width: 1040px; margin: 0 auto; padding: 24px 20px 48px; }
+  .painel {
+    background: var(--painel);
+    border: 1px solid var(--borda);
+    border-radius: var(--raio);
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+  .painel h2 { margin: 0 0 4px; font-size: 1.05rem; }
+  .painel .descricao { margin: 0 0 16px; color: var(--suave); font-size: 0.9rem; }
+  label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 4px; }
+  input, select {
+    font: inherit;
+    padding: 8px 10px;
+    border: 1px solid var(--borda);
+    border-radius: 6px;
+    background: #fff;
+    width: 100%;
+  }
+  input:focus, select:focus { outline: 2px solid var(--primaria); outline-offset: 0; border-color: var(--primaria); }
+  button {
+    font: inherit;
+    padding: 8px 14px;
+    border-radius: 6px;
+    border: 1px solid var(--primaria);
+    background: var(--primaria);
+    color: #fff;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  button:hover { background: var(--primaria-escura); }
+  button.secundario { background: #fff; color: var(--primaria); }
+  button.secundario:hover { background: #eef3f8; }
+  button.perigo { background: #fff; color: var(--erro); border-color: var(--erro); }
+  button.perigo:hover { background: var(--erro-fundo); }
+  button.pequeno { padding: 4px 10px; font-size: 0.85rem; }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  .linha { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
+  .linha > .campo { flex: 1 1 180px; }
+  .grade { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+  .oculto { display: none !important; }
+
+  /* login */
+  #tela-login { max-width: 420px; margin: 48px auto; }
+  .usuarios-teste { margin-top: 16px; font-size: 0.85rem; color: var(--suave); }
+  .usuarios-teste button { margin: 4px 4px 0 0; }
+
+  /* abas */
+  nav.abas { display: flex; gap: 4px; border-bottom: 1px solid var(--borda); margin-bottom: 20px; flex-wrap: wrap; }
+  nav.abas button {
+    background: transparent;
+    color: var(--suave);
+    border: none;
+    border-bottom: 3px solid transparent;
+    border-radius: 0;
+    padding: 10px 14px;
+  }
+  nav.abas button:hover { background: transparent; color: var(--texto); }
+  nav.abas button.ativa { color: var(--primaria); border-bottom-color: var(--primaria); font-weight: 600; }
+
+  /* tabelas */
+  .tabela-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--borda); vertical-align: middle; }
+  th { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.03em; color: var(--suave); font-weight: 600; }
+  td.acoes { text-align: right; white-space: nowrap; }
+  td.acoes button + button { margin-left: 6px; }
+  .vazio { color: var(--suave); padding: 16px 8px; }
+  .etiqueta { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 0.78rem; font-weight: 600; }
+  .etiqueta.ativo { background: #e7eef6; color: var(--primaria); }
+  .etiqueta.encerrado { background: #eceae6; color: var(--suave); }
+  .etiqueta.atraso { background: var(--aviso-fundo); color: var(--aviso); }
+  .disp-zero { color: var(--erro); font-weight: 600; }
+
+  /* mensagens */
+  #mensagem {
+    position: fixed;
+    right: 20px;
+    bottom: 20px;
+    max-width: 380px;
+    padding: 12px 16px;
+    border-radius: var(--raio);
+    border: 1px solid;
+    font-size: 0.92rem;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+  }
+  #mensagem.ok { background: var(--ok-fundo); color: var(--ok); border-color: #b9dcc5; }
+  #mensagem.erro { background: var(--erro-fundo); color: var(--erro); border-color: #efc0ba; }
+  .confirmacao {
+    margin-top: 12px;
+    padding: 12px;
+    border-radius: 6px;
+    background: var(--aviso-fundo);
+    color: var(--aviso);
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .linha-edicao td { background: #f9f8f5; }
+  .linha-edicao input { padding: 6px 8px; }
+</style>
+</head>
+<body>
+
+<header class="topo">
+  <div class="conteudo">
+    <h1>Biblioteca Universitária</h1>
+    <div id="usuario-info" class="oculto">
+      <span id="usuario-nome"></span>
+      <span id="usuario-perfil" class="perfil"></span>
+      <button id="sair" class="secundario pequeno" type="button">Sair</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- UC01: autenticação -->
+  <section id="tela-login" class="painel">
+    <h2>Entrar</h2>
+    <p class="descricao">Informe sua matrícula para acessar o sistema.</p>
+    <form id="form-login">
+      <label for="login-matricula">Matrícula</label>
+      <div class="linha">
+        <div class="campo"><input id="login-matricula" autocomplete="off" required></div>
+        <button type="submit">Entrar</button>
+      </div>
+    </form>
+    <div class="usuarios-teste">
+      Usuários de teste:
+      <div>
+        <button type="button" class="secundario pequeno" data-matricula="2023001">2023001 · aluno</button>
+        <button type="button" class="secundario pequeno" data-matricula="2023002">2023002 · aluno</button>
+        <button type="button" class="secundario pequeno" data-matricula="B001">B001 · bibliotecário</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="tela-app" class="oculto">
+    <nav class="abas" id="abas"></nav>
+
+    <!-- UC02 (+ UC03 aluno, UC06/07/08 e UC03 em nome do aluno para bibliotecário) -->
+    <section id="aba-acervo" class="aba">
+      <div class="painel">
+        <h2>Acervo</h2>
+        <p class="descricao" id="acervo-descricao">Pesquise por título, autor ou categoria.</p>
+        <form id="form-busca" class="linha">
+          <div class="campo">
+            <label for="busca-termo">Pesquisar</label>
+            <input id="busca-termo" placeholder="Deixe vazio para listar todo o acervo">
+          </div>
+          <button type="submit">Buscar</button>
+        </form>
+        <div id="emprestar-para" class="linha oculto" style="margin-top:12px">
+          <div class="campo">
+            <label for="matricula-aluno">Emprestar para a matrícula</label>
+            <input id="matricula-aluno" placeholder="Ex.: 2023001">
+          </div>
+        </div>
+      </div>
+      <div class="painel">
+        <div class="tabela-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Título</th><th>Autor</th><th>Categoria</th><th>ISBN</th><th>Disponíveis</th><th></th>
+              </tr>
+            </thead>
+            <tbody id="tabela-livros"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- UC05: aluno -->
+    <section id="aba-meus" class="aba oculto">
+      <div class="painel">
+        <h2>Meus empréstimos</h2>
+        <p class="descricao">Empréstimos ativos e histórico. O prazo padrão é de 14 dias.</p>
+        <div class="tabela-wrap">
+          <table>
+            <thead>
+              <tr><th>Livro</th><th>Empréstimo</th><th>Devolver até</th><th>Devolução</th><th>Situação</th><th></th></tr>
+            </thead>
+            <tbody id="tabela-meus"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- UC09: bibliotecário -->
+    <section id="aba-emprestimos" class="aba oculto">
+      <div class="painel">
+        <h2>Empréstimos</h2>
+        <p class="descricao">Todos os empréstimos. Filtre por situação ou pesquise por aluno ou livro.</p>
+        <form id="form-filtro" class="linha">
+          <div class="campo">
+            <label for="filtro-status">Situação</label>
+            <select id="filtro-status">
+              <option value="">Todos</option>
+              <option value="ATIVO" selected>Ativos</option>
+              <option value="ENCERRADO">Encerrados</option>
+            </select>
+          </div>
+          <div class="campo">
+            <label for="filtro-termo">Aluno ou livro</label>
+            <input id="filtro-termo" placeholder="Nome, matrícula ou título">
+          </div>
+          <button type="submit">Filtrar</button>
+        </form>
+      </div>
+      <div class="painel">
+        <div class="tabela-wrap">
+          <table>
+            <thead>
+              <tr><th>Aluno</th><th>Livro</th><th>Empréstimo</th><th>Devolver até</th><th>Devolução</th><th>Situação</th><th></th></tr>
+            </thead>
+            <tbody id="tabela-emprestimos"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- UC06: bibliotecário -->
+    <section id="aba-cadastro" class="aba oculto">
+      <div class="painel">
+        <h2>Cadastrar livro</h2>
+        <p class="descricao">Todos os campos são obrigatórios. Se o ISBN já existir, o sistema oferece somar os exemplares ao livro cadastrado.</p>
+        <form id="form-cadastro">
+          <div class="grade">
+            <div><label for="cad-titulo">Título</label><input id="cad-titulo" required></div>
+            <div><label for="cad-autor">Autor</label><input id="cad-autor" required></div>
+            <div><label for="cad-isbn">ISBN</label><input id="cad-isbn" required></div>
+            <div><label for="cad-categoria">Categoria</label><input id="cad-categoria" required></div>
+            <div><label for="cad-qtd">Exemplares</label><input id="cad-qtd" type="number" min="1" value="1" required></div>
+          </div>
+          <div style="margin-top:16px"><button type="submit">Cadastrar</button></div>
+          <div id="confirmar-isbn" class="confirmacao oculto">
+            <span id="confirmar-isbn-texto"></span>
+            <button type="button" id="confirmar-isbn-sim" class="pequeno">Somar exemplares</button>
+            <button type="button" id="confirmar-isbn-nao" class="secundario pequeno">Cancelar</button>
+          </div>
+        </form>
+      </div>
+    </section>
+  </section>
+</main>
+
+<div id="mensagem" class="oculto" role="status" aria-live="polite"></div>
+
+<script>
+  const estado = { token: null, nome: "", perfil: "", livros: [], editando: null, confirmarExclusao: null };
+  const $ = (seletor) => document.querySelector(seletor);
+
+  // ---------- comunicação com o servidor ----------
+  async function api(metodo, caminho, corpo) {
+    const opcoes = { method: metodo, headers: {} };
+    if (estado.token) opcoes.headers["Authorization"] = "Bearer " + estado.token;
+    if (corpo !== undefined) {
+      opcoes.headers["Content-Type"] = "application/json";
+      opcoes.body = JSON.stringify(corpo);
+    }
+    let resposta;
+    try {
+      resposta = await fetch(caminho, opcoes);
+    } catch (e) {
+      throw { status: 0, mensagem: "Não foi possível falar com o servidor. Verifique se ele está no ar e tente de novo." };
+    }
+    const texto = await resposta.text();
+    let dados = texto;
+    try { dados = texto ? JSON.parse(texto) : null; } catch (e) { /* PUT e DELETE devolvem texto simples */ }
+    if (!resposta.ok) {
+      if (resposta.status === 401 && estado.token) sair("Sua sessão expirou. Entre novamente.");
+      const mensagem = (dados && dados.mensagem) || (typeof dados === "string" && dados) || mensagemPadrao(resposta.status);
+      throw { status: resposta.status, mensagem };
+    }
+    return dados;
+  }
+
+  function mensagemPadrao(status) {
+    return {
+      400: "Dados inválidos.",
+      401: "Não autenticado.",
+      403: "Sem permissão para esta operação.",
+      404: "Não encontrado.",
+      409: "Operação recusada pelas regras da biblioteca.",
+    }[status] || "Falha interna no servidor.";
+  }
+
+  let temporizador;
+  function avisar(texto, tipo = "ok") {
+    const caixa = $("#mensagem");
+    caixa.textContent = texto;
+    caixa.className = tipo;
+    clearTimeout(temporizador);
+    temporizador = setTimeout(() => caixa.classList.add("oculto"), 5000);
+  }
+
+  function escapar(valor) {
+    return String(valor ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  }
+
+  function dataBR(valor) {
+    if (!valor) return "—";
+    const [a, m, d] = valor.split("-");
+    return `${d}/${m}/${a}`;
+  }
+
+  // ---------- login (UC01) ----------
+  async function entrar(matricula) {
+    try {
+      const dados = await api("POST", "/auth/login", { matricula });
+      estado.token = dados.token;
+      estado.nome = dados.nome;
+      estado.perfil = dados.perfil;
+      sessionStorage.setItem("sessao", JSON.stringify({ token: dados.token, nome: dados.nome, perfil: dados.perfil }));
+      montarApp();
+    } catch (e) {
+      avisar(e.status === 401 ? "Matrícula não encontrada." : e.mensagem, "erro");
+    }
+  }
+
+  function sair(mensagem) {
+    estado.token = null;
+    sessionStorage.removeItem("sessao");
+    $("#tela-app").classList.add("oculto");
+    $("#usuario-info").classList.add("oculto");
+    $("#tela-login").classList.remove("oculto");
+    $("#login-matricula").value = "";
+    if (mensagem) avisar(mensagem, "erro");
+  }
+
+  $("#form-login").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const matricula = $("#login-matricula").value.trim();
+    if (matricula) entrar(matricula);
+  });
+  document.querySelectorAll("[data-matricula]").forEach((botao) =>
+    botao.addEventListener("click", () => entrar(botao.dataset.matricula)));
+  $("#sair").addEventListener("click", () => sair());
+
+  // ---------- estrutura por perfil ----------
+  const ehBibliotecario = () => estado.perfil === "BIBLIOTECARIO";
+
+  function montarApp() {
+    $("#tela-login").classList.add("oculto");
+    $("#tela-app").classList.remove("oculto");
+    $("#usuario-info").classList.remove("oculto");
+    $("#usuario-nome").textContent = estado.nome;
+    $("#usuario-perfil").textContent = ehBibliotecario() ? "Bibliotecário" : "Aluno";
+
+    const abas = ehBibliotecario()
+      ? [["acervo", "Acervo"], ["emprestimos", "Empréstimos"], ["cadastro", "Cadastrar livro"]]
+      : [["acervo", "Acervo"], ["meus", "Meus empréstimos"]];
+    $("#abas").innerHTML = abas
+      .map(([id, nome]) => `<button type="button" data-aba="${id}">${nome}</button>`)
+      .join("");
+    document.querySelectorAll("#abas button").forEach((b) => b.addEventListener("click", () => abrirAba(b.dataset.aba)));
+
+    $("#emprestar-para").classList.toggle("oculto", !ehBibliotecario());
+    $("#acervo-descricao").textContent = ehBibliotecario()
+      ? "Pesquise, edite ou exclua livros. Para emprestar, informe a matrícula do aluno e clique em Emprestar."
+      : "Pesquise por título, autor ou categoria e clique em Emprestar.";
+    $("#busca-termo").value = "";
+    abrirAba("acervo");
+  }
+
+  function abrirAba(id) {
+    document.querySelectorAll(".aba").forEach((a) => a.classList.add("oculto"));
+    $("#aba-" + id).classList.remove("oculto");
+    document.querySelectorAll("#abas button").forEach((b) => b.classList.toggle("ativa", b.dataset.aba === id));
+    if (id === "acervo") carregarLivros();
+    if (id === "meus") carregarMeus();
+    if (id === "emprestimos") carregarEmprestimos();
+  }
+
+  // ---------- acervo (UC02, UC03, UC07, UC08) ----------
+  async function carregarLivros() {
+    const termo = $("#busca-termo").value.trim();
+    try {
+      estado.livros = await api("GET", "/livros" + (termo ? "?q=" + encodeURIComponent(termo) : ""));
+      estado.editando = null;
+      estado.confirmarExclusao = null;
+      desenharLivros();
+    } catch (e) {
+      avisar(e.mensagem, "erro");
+    }
+  }
+
+  function desenharLivros() {
+    const corpo = $("#tabela-livros");
+    if (!estado.livros.length) {
+      corpo.innerHTML = `<tr><td colspan="6" class="vazio">Nenhum resultado.</td></tr>`;
+      return;
+    }
+    corpo.innerHTML = estado.livros.map((l) => {
+      if (estado.editando === l.id) {
+        return `<tr class="linha-edicao" data-id="${l.id}">
+          <td><input data-campo="titulo" value="${escapar(l.titulo)}"></td>
+          <td><input data-campo="autor" value="${escapar(l.autor)}"></td>
+          <td><input data-campo="categoria" value="${escapar(l.categoria)}"></td>
+          <td><input data-campo="isbn" value="${escapar(l.isbn)}"></td>
+          <td>${l.qtdDisponivel} de ${l.qtdTotal}</td>
+          <td class="acoes">
+            <button class="pequeno" data-acao="salvar">Salvar</button>
+            <button class="secundario pequeno" data-acao="cancelar">Cancelar</button>
+          </td></tr>`;
+      }
+      const disponivel = l.qtdDisponivel > 0;
+      let acoes = `<button class="pequeno" data-acao="emprestar" ${disponivel ? "" : "disabled"}>Emprestar</button>`;
+      if (ehBibliotecario()) {
+        acoes += estado.confirmarExclusao === l.id
+          ? `<button class="perigo pequeno" data-acao="confirmar-exclusao">Confirmar exclusão</button>
+             <button class="secundario pequeno" data-acao="cancelar">Cancelar</button>`
+          : `<button class="secundario pequeno" data-acao="editar">Editar</button>
+             <button class="perigo pequeno" data-acao="excluir">Excluir</button>`;
+      }
+      return `<tr data-id="${l.id}">
+        <td>${escapar(l.titulo)}</td>
+        <td>${escapar(l.autor)}</td>
+        <td>${escapar(l.categoria)}</td>
+        <td>${escapar(l.isbn)}</td>
+        <td class="${disponivel ? "" : "disp-zero"}">${l.qtdDisponivel} de ${l.qtdTotal}</td>
+        <td class="acoes">${acoes}</td></tr>`;
+    }).join("");
+  }
+
+  $("#tabela-livros").addEventListener("click", async (e) => {
+    const botao = e.target.closest("button[data-acao]");
+    if (!botao) return;
+    const linha = botao.closest("tr");
+    const id = Number(linha.dataset.id);
+    const acao = botao.dataset.acao;
+
+    if (acao === "emprestar") return emprestar(id);
+    if (acao === "editar") { estado.editando = id; estado.confirmarExclusao = null; return desenharLivros(); }
+    if (acao === "excluir") { estado.confirmarExclusao = id; estado.editando = null; return desenharLivros(); }
+    if (acao === "cancelar") { estado.editando = null; estado.confirmarExclusao = null; return desenharLivros(); }
+
+    if (acao === "salvar") {
+      const dados = {};
+      linha.querySelectorAll("input[data-campo]").forEach((i) => (dados[i.dataset.campo] = i.value.trim()));
+      if (!dados.titulo) return avisar("Informe o título.", "erro");
+      try {
+        const resposta = await api("PUT", "/livros/" + id, dados);
+        avisar(resposta || "Livro atualizado com sucesso");
+        carregarLivros();
+      } catch (err) { avisar(err.mensagem, "erro"); }
+    }
+
+    if (acao === "confirmar-exclusao") {
+      try {
+        const resposta = await api("DELETE", "/livros/" + id);
+        avisar(resposta || "Livro removido com sucesso");
+        carregarLivros();
+      } catch (err) { avisar(err.mensagem, "erro"); }
+    }
+  });
+
+  async function emprestar(livroId) {
+    const corpo = { livroId };
+    if (ehBibliotecario()) {
+      const matricula = $("#matricula-aluno").value.trim();
+      if (!matricula) {
+        $("#matricula-aluno").focus();
+        return avisar("Informe a matrícula do aluno para emprestar.", "erro");
+      }
+      corpo.matriculaAluno = matricula;
+    }
+    try {
+      const resposta = await api("POST", "/emprestimos", corpo);
+      avisar(`Empréstimo realizado. Devolver até ${dataBR(resposta.dataPrevista)}.`);
+      carregarLivros();
+    } catch (e) {
+      avisar(e.mensagem, "erro");
+    }
+  }
+
+  $("#form-busca").addEventListener("submit", (e) => { e.preventDefault(); carregarLivros(); });
+
+  // ---------- empréstimos (UC04, UC05, UC09) ----------
+  function situacao(emp) {
+    if (emp.status === "ATIVO") {
+      const vencido = emp.dataPrevista && emp.dataPrevista < new Date().toISOString().slice(0, 10);
+      return vencido ? `<span class="etiqueta atraso">Atrasado</span>` : `<span class="etiqueta ativo">Ativo</span>`;
+    }
+    return emp.emAtraso
+      ? `<span class="etiqueta atraso">Devolvido com atraso</span>`
+      : `<span class="etiqueta encerrado">Devolvido</span>`;
+  }
+
+  function botaoDevolver(emp) {
+    return emp.status === "ATIVO" ? `<button class="pequeno" data-devolver="${emp.id}">Devolver</button>` : "";
+  }
+
+  async function carregarMeus() {
+    try {
+      const lista = await api("GET", "/emprestimos/meus");
+      $("#tabela-meus").innerHTML = lista.length
+        ? lista.map((emp) => `<tr>
+            <td>${escapar(emp.titulo)}</td>
+            <td>${dataBR(emp.dataEmprestimo)}</td>
+            <td>${dataBR(emp.dataPrevista)}</td>
+            <td>${dataBR(emp.dataDevolucao)}</td>
+            <td>${situacao(emp)}</td>
+            <td class="acoes">${botaoDevolver(emp)}</td></tr>`).join("")
+        : `<tr><td colspan="6" class="vazio">Você ainda não tem empréstimos.</td></tr>`;
+    } catch (e) { avisar(e.mensagem, "erro"); }
+  }
+
+  async function carregarEmprestimos() {
+    const parametros = new URLSearchParams();
+    const status = $("#filtro-status").value;
+    const termo = $("#filtro-termo").value.trim();
+    if (status) parametros.set("status", status);
+    if (termo) parametros.set("q", termo);
+    try {
+      const lista = await api("GET", "/emprestimos" + (parametros.toString() ? "?" + parametros : ""));
+      $("#tabela-emprestimos").innerHTML = lista.length
+        ? lista.map((emp) => `<tr>
+            <td>${escapar(emp.nome)}<br><small style="color:var(--suave)">${escapar(emp.matricula)}</small></td>
+            <td>${escapar(emp.titulo)}</td>
+            <td>${dataBR(emp.dataEmprestimo)}</td>
+            <td>${dataBR(emp.dataPrevista)}</td>
+            <td>${dataBR(emp.dataDevolucao)}</td>
+            <td>${situacao(emp)}</td>
+            <td class="acoes">${botaoDevolver(emp)}</td></tr>`).join("")
+        : `<tr><td colspan="7" class="vazio">Nenhum empréstimo encontrado.</td></tr>`;
+    } catch (e) { avisar(e.mensagem, "erro"); }
+  }
+
+  async function devolver(id, recarregar) {
+    try {
+      const resposta = await api("POST", `/emprestimos/${id}/devolucao`);
+      avisar(resposta.mensagem || "Devolução realizada", resposta.emAtraso ? "erro" : "ok");
+      recarregar();
+    } catch (e) { avisar(e.mensagem, "erro"); }
+  }
+
+  $("#tabela-meus").addEventListener("click", (e) => {
+    const botao = e.target.closest("button[data-devolver]");
+    if (botao) devolver(botao.dataset.devolver, carregarMeus);
+  });
+  $("#tabela-emprestimos").addEventListener("click", (e) => {
+    const botao = e.target.closest("button[data-devolver]");
+    if (botao) devolver(botao.dataset.devolver, carregarEmprestimos);
+  });
+  $("#form-filtro").addEventListener("submit", (e) => { e.preventDefault(); carregarEmprestimos(); });
+
+  // ---------- cadastro (UC06) ----------
+  function dadosCadastro(incrementar) {
+    return {
+      titulo: $("#cad-titulo").value.trim(),
+      autor: $("#cad-autor").value.trim(),
+      isbn: $("#cad-isbn").value.trim(),
+      categoria: $("#cad-categoria").value.trim(),
+      qtdTotal: Number($("#cad-qtd").value),
+      incrementar,
+    };
+  }
+
+  async function cadastrar(incrementar) {
+    $("#confirmar-isbn").classList.add("oculto");
+    try {
+      const livro = await api("POST", "/livros", dadosCadastro(incrementar));
+      avisar(incrementar
+        ? `Exemplares somados. "${livro.titulo}" agora tem ${livro.qtdTotal} exemplares.`
+        : `Livro "${livro.titulo}" cadastrado.`);
+      $("#form-cadastro").reset();
+    } catch (e) {
+      if (e.status === 409 && !incrementar) {
+        $("#confirmar-isbn-texto").textContent = e.mensagem;
+        $("#confirmar-isbn").classList.remove("oculto");
+      } else {
+        avisar(e.mensagem, "erro");
+      }
+    }
+  }
+
+  $("#form-cadastro").addEventListener("submit", (e) => { e.preventDefault(); cadastrar(false); });
+  $("#confirmar-isbn-sim").addEventListener("click", () => cadastrar(true));
+  $("#confirmar-isbn-nao").addEventListener("click", () => $("#confirmar-isbn").classList.add("oculto"));
+
+  // ---------- retoma a sessão ao recarregar a página ----------
+  try {
+    const salva = JSON.parse(sessionStorage.getItem("sessao") || "null");
+    if (salva && salva.token) {
+      Object.assign(estado, salva);
+      montarApp();
+    }
+  } catch (e) { sessionStorage.removeItem("sessao"); }
+</script>
+</body>
+</html>
