@@ -1,91 +1,92 @@
 package com.biblioteca.servidor.service;
 
 import com.biblioteca.servidor.model.Livro;
+import com.biblioteca.servidor.model.StatusEmprestimo;
+import com.biblioteca.servidor.repository.EmprestimoRepository;
+import com.biblioteca.servidor.repository.LivroRepository;
+import java.util.List;
 import org.springframework.stereotype.Service;
-import java.util.*;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class BibliotecaService {
-    private final List<Livro> livros = new ArrayList<>();
-    private int proxId= 1;
+    private final LivroRepository livroRepository;
+    private final EmprestimoRepository emprestimoRepository;
 
-    public synchronized Livro cadastrarLivro(String titulo, String autor){
-        Livro livro = new Livro(proxId++, titulo, autor);
-        livros.add(livro);
-
-        return livro;
+    public BibliotecaService(LivroRepository livroRepository, EmprestimoRepository emprestimoRepository) {
+        this.livroRepository = livroRepository;
+        this.emprestimoRepository = emprestimoRepository;
     }
 
-    public synchronized List<Livro> listarLivros(){
-        return new ArrayList<>(livros);
+    public List<Livro> listarLivros(String termo) {
+        if (termo == null || termo.isBlank()) {
+            return livroRepository.findAll();
+        }
+        return livroRepository.buscar(termo.trim());
     }
 
-    // devolve o livro ou null se o id nao existir
-    public synchronized Livro buscarLivro(int id){
-        for (Livro livro : livros){
-            if(livro.getId() == id){
-                return livro;
+    public Livro buscarLivro(int id) {
+        return livroRepository.findById(id).orElse(null);
+    }
+
+    @Transactional
+    public Livro cadastrarLivro(Livro dados) {
+        if (dados.getTitulo() == null || dados.getTitulo().isBlank()) {
+            throw new ApiException(400, "Informe o título");
+        }
+        int quantidade = dados.getQtdTotal() > 0 ? dados.getQtdTotal() : 1;
+        String isbn = textoOuNulo(dados.getIsbn());
+        if (isbn != null && livroRepository.existsByIsbn(isbn)) {
+            throw new ApiException(409, "ISBN já cadastrado");
+        }
+
+        Livro livro = new Livro();
+        livro.setTitulo(dados.getTitulo().trim());
+        livro.setIsbn(isbn);
+        livro.setCategoria(textoOuNulo(dados.getCategoria()));
+        livro.setQtdTotal(quantidade);
+        livro.setQtdDisponivel(quantidade);
+        return livroRepository.save(livro);
+    }
+
+    @Transactional
+    public String atualizarLivro(int id, Livro dados) {
+        Livro livro = livroRepository.findById(id).orElse(null);
+        if (livro == null) {
+            return "O livro não foi encontrado";
+        }
+        if (dados.getTitulo() != null && !dados.getTitulo().isBlank()) {
+            livro.setTitulo(dados.getTitulo().trim());
+        }
+        if (dados.getCategoria() != null) {
+            livro.setCategoria(textoOuNulo(dados.getCategoria()));
+        }
+        if (dados.getIsbn() != null) {
+            String isbn = textoOuNulo(dados.getIsbn());
+            if (isbn != null && livroRepository.existsByIsbn(isbn) && !isbn.equals(livro.getIsbn())) {
+                throw new ApiException(409, "ISBN já cadastrado");
             }
+            livro.setIsbn(isbn);
         }
-        return null;
+        return "Livro atualizado com sucesso";
     }
 
-    public synchronized String emprestarLivro(int id){
-
-        for (Livro livro : livros){
-            if(livro.getId() == id){
-                if(!livro.isDisponivel()){
-                    return "O livro já esta emprestado";
-                }
-
-                livro.setDisponivel(false);// marca como emprestado
-
-                return "Seu empréstimo foi realizado com sucesso";
-            }
+    @Transactional
+    public String deletarLivro(int id) {
+        if (!livroRepository.existsById(id)) {
+            return "O livro não foi encontrado";
         }
-        return "O livro não foi encontrado";
+        if (emprestimoRepository.existsByLivroIdAndStatus(id, StatusEmprestimo.ATIVO)) {
+            throw new ApiException(409, "livro com empréstimo ativo não pode ser excluído");
+        }
+        livroRepository.deleteById(id);
+        return "Livro removido com sucesso";
     }
 
-    public synchronized String devolverLivro(int id){
-
-        for (Livro livro : livros){
-            if(livro.getId() == id){
-
-                if(livro.isDisponivel()){
-                    return "O livro não estava emprestado";
-                }
-
-                livro.setDisponivel(true);// marca como disponivel
-
-                return "Devolução realizada com sucesso";
-            }
+    private String textoOuNulo(String valor) {
+        if (valor == null || valor.isBlank()) {
+            return null;
         }
-
-        return "O livro não foi encontrado";
-    }
-
-    public synchronized String atualizarLivro(int id, String titulo, String autor){
-
-        for (Livro livro : livros){
-            if(livro.getId() == id){
-
-                livro.setTitulo(titulo);
-                livro.setAutor(autor);
-
-                return "Livro atualizado com sucesso";
-            }
-        }
-
-        return "O livro não foi encontrado";
-    }
-
-    public synchronized String deletarLivro(int id){
-
-        boolean removido = livros.removeIf(livro -> livro.getId() == id);
-
-        if(removido){
-            return "Livro removido com sucesso";
-        }
-        return "O livro não foi encontrado";
+        return valor.trim();
     }
 }

@@ -1,14 +1,20 @@
 package com.biblioteca.cliente;
 
 import java.net.URI;
+import java.net.URLEncoder;
 import java.net.http.*;
+import java.nio.charset.StandardCharsets;
 import java.util.Scanner;
 
 public class ClienteAluno {
 
     public static final Scanner scanner = new Scanner(System.in);
+    public static String token;
 
     public static void main(String[] args) {
+        if (!autenticar()) {
+            return;
+        }
 
         int opcao = 0;
 
@@ -60,12 +66,49 @@ public class ClienteAluno {
         }
     }
 
-    public static void consultarLivros() {
+    public static boolean autenticar() {
+        System.out.println("Digite a matricula: ");
+        String matricula = scanner.nextLine().trim();
+        String json = String.format("{\"matricula\":\"%s\"}", matricula);
         try {
             HttpClient cliente = HttpClient.newHttpClient();
-
             HttpRequest requisicao = HttpRequest.newBuilder()
-                    .uri(URI.create("http://localhost:8080/livros")).GET().build();
+                    .uri(URI.create("http://localhost:8080/auth/login"))
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(json))
+                    .build();
+            HttpResponse<String> resposta = cliente.send(requisicao, HttpResponse.BodyHandlers.ofString());
+            if (resposta.statusCode() != 200) {
+                System.out.println(resposta.body());
+                return false;
+            }
+            String corpo = resposta.body();
+            int inicio = corpo.indexOf("\"token\":\"") + "\"token\":\"".length();
+            token = corpo.substring(inicio, corpo.indexOf('"', inicio));
+            System.out.println("Login realizado");
+            return true;
+        } catch (Exception e) {
+            System.out.println("Erro no login: " + e.getMessage());
+            return false;
+        }
+    }
+
+    public static HttpRequest.Builder comToken(String url) {
+        return HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .header("Authorization", "Bearer " + token);
+    }
+
+    public static void consultarLivros() {
+        try {
+            System.out.println("Digite titulo ou categoria, ou enter para listar todos: ");
+            String termo = scanner.nextLine().trim();
+            String url = termo.isEmpty()
+                    ? "http://localhost:8080/livros"
+                    : "http://localhost:8080/livros?q=" + URLEncoder.encode(termo, StandardCharsets.UTF_8);
+
+            HttpClient cliente = HttpClient.newHttpClient();
+            HttpRequest requisicao = comToken(url).GET().build();
 
             HttpResponse<String> resposta = cliente.send(requisicao, HttpResponse.BodyHandlers.ofString());
 
@@ -86,8 +129,7 @@ public class ClienteAluno {
         try {
             HttpClient cliente = HttpClient.newHttpClient();
 
-            HttpRequest requisicao = HttpRequest.newBuilder()
-                    .uri(URI.create("http://localhost:8080/livros/" + id)).GET().build();
+            HttpRequest requisicao = comToken("http://localhost:8080/livros/" + id).GET().build();
 
             HttpResponse<String> resposta = cliente.send(requisicao, HttpResponse.BodyHandlers.ofString());
 
@@ -110,9 +152,10 @@ public class ClienteAluno {
         try {
             HttpClient cliente = HttpClient.newHttpClient();
 
-            HttpRequest requisicao = HttpRequest.newBuilder()
-                    .uri(URI.create("http://localhost:8080/livros/" + id + "/emprestar"))
-                    .PUT(HttpRequest.BodyPublishers.noBody()).build();
+            String json = "{\"livroId\":" + id + "}";
+            HttpRequest requisicao = comToken("http://localhost:8080/emprestimos")
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(json)).build();
 
             HttpResponse<String> resposta = cliente.send(requisicao, HttpResponse.BodyHandlers.ofString());
 
@@ -127,7 +170,7 @@ public class ClienteAluno {
     }
 
     public static void devolverLivro() {
-        Integer id = lerInteiro("Digite o Id do livro: ");
+        Integer id = lerInteiro("Digite o Id do emprestimo: ");
         if (id == null) {
             return;
         }
@@ -135,9 +178,8 @@ public class ClienteAluno {
         try {
             HttpClient cliente = HttpClient.newHttpClient();
 
-            HttpRequest requisicao = HttpRequest.newBuilder()
-                    .uri(URI.create("http://localhost:8080/livros/" + id + "/devolver"))
-                    .PUT(HttpRequest.BodyPublishers.noBody()).build();
+            HttpRequest requisicao = comToken("http://localhost:8080/emprestimos/" + id + "/devolucao")
+                    .POST(HttpRequest.BodyPublishers.noBody()).build();
 
             HttpResponse<String> resposta = cliente.send(requisicao, HttpResponse.BodyHandlers.ofString());
 
